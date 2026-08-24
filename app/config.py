@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     editor_pass: str = "editor123"
     viewer_user: str = "viewer"
     viewer_pass: str = "viewer123"
+    session_secret: str = "change-me-in-production"
 
     model_config = SettingsConfigDict(
         env_file=".env",

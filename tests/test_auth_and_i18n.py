@@ -18,6 +18,41 @@ def test_auth_unauthenticated_and_invalid(unauth_client: TestClient) -> None:
     assert res_bad.status_code == 401
 
 
+def test_branded_login_and_session_flow(unauth_client: TestClient) -> None:
+    """Anonymous browser users see login and can establish a cookie session."""
+    anonymous = unauth_client.get("/", follow_redirects=False)
+    assert anonymous.status_code == 303
+    assert anonymous.headers["location"].startswith("/login")
+
+    page = unauth_client.get("/login")
+    assert page.status_code == 200
+    assert "Bem-vindo de volta" in page.text
+    assert 'name="role"' in page.text
+    assert 'value="editor"' in page.text
+    assert 'value="viewer"' in page.text
+
+    invalid = unauth_client.post(
+        "/login", data={"role": "editor", "password": "wrong"}
+    )
+    assert invalid.status_code == 401
+    assert "Usuário ou senha incorretos" in invalid.text
+
+    logged_in = unauth_client.post(
+        "/login",
+        data={"role": "editor", "password": "editor123"},
+        follow_redirects=False,
+    )
+    assert logged_in.status_code == 303
+    assert "privio_session" in logged_in.cookies
+
+    dashboard = unauth_client.get("/")
+    assert dashboard.status_code == 200
+    assert "Privio" in dashboard.text
+
+    logged_out = unauth_client.post("/logout", follow_redirects=False)
+    assert logged_out.status_code == 303
+
+
 def test_auth_viewer_role_permissions(
     viewer_client: TestClient, editor_client: TestClient
 ) -> None:
