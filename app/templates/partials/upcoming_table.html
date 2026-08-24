@@ -41,6 +41,7 @@
                     <th>{{ t('th_recurrence') }}</th>
                     <th>{{ t('th_amount') }}</th>
                     <th>{{ t('th_status') }}</th>
+                    {% if user.role.value == 'editor' %}<th>Ações</th>{% endif %}
                 </tr>
             </thead>
             <tbody>
@@ -57,6 +58,24 @@
                                     {{ t('days_badge', days=item.days_until) }}
                                 {% endif %}
                             </td>
+                            {% if user.role.value == 'editor' %}
+                                <td>
+                                    <div class="action-btns">
+                                        <button
+                                            class="secondary outline"
+                                            hx-get="/ui/commitments/{{ item.original_commitment_id }}/edit?occurrence_date={{ item.occurrence_date.isoformat() }}&lang={{ lang }}"
+                                            hx-target="#modal-container"
+                                            hx-swap="innerHTML">Editar</button>
+                                        <button
+                                            class="outline"
+                                            style="color: #ef4444; border-color: #ef4444;"
+                                            hx-delete="/ui/commitments/{{ item.original_commitment_id }}/occurrences/{{ item.occurrence_date.isoformat() }}?lang={{ lang }}"
+                                            hx-target="#dashboard-content"
+                                            hx-swap="innerHTML"
+                                            hx-confirm="Excluir somente esta ocorrência?">Excluir ocorrência</button>
+                                    </div>
+                                </td>
+                            {% endif %}
                             <td>
                                 {{ item.description }}
                                 {% if item.is_estimate %}
@@ -79,7 +98,7 @@
                     {% endfor %}
                 {% else %}
                     <tr>
-                        <td colspan="7" style="text-align: center; color: var(--pico-muted-color); padding: 2rem;">
+                        <td colspan="{% if user.role.value == 'editor' %}8{% else %}7{% endif %}" style="text-align: center; color: var(--pico-muted-color); padding: 2rem;">
                             {{ t('no_upcoming', days=days) }}
                         </td>
                     </tr>

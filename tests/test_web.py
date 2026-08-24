@@ -188,3 +188,79 @@ def test_ui_deposit_form_and_creation_htmx(client: TestClient) -> None:
         "Depósito de R$ 1,000.00 registrado com sucesso" in create_res.text
         or "1,000.00" in create_res.text
     )
+
+
+def test_recurring_occurrence_edit_scopes_and_single_delete(
+    client: TestClient,
+) -> None:
+    """Single and future edits must not overwrite the complete recurring series."""
+    created = client.post(
+        "/commitments",
+        json={
+            "description": "School Pedro",
+            "amount": "400.00",
+            "due_date": "2026-08-15",
+            "recurrence": "monthly",
+            "category": "Education",
+            "status": "pending",
+        },
+    )
+    commitment_id = created.json()["id"]
+    base_form = {
+        "description": "School Pedro",
+        "due_date": "2026-09-15",
+        "category": "Education",
+        "recurrence": "monthly",
+        "status": "pending",
+    }
+
+    single = client.post(
+        f"/ui/commitments/{commitment_id}/edit",
+        data={
+            **base_form,
+            "amount": "440.00",
+            "scope": "single",
+            "occurrence_date": "2026-09-15",
+        },
+    )
+    assert single.status_code == 200
+
+    future = client.post(
+        f"/ui/commitments/{commitment_id}/edit",
+        data={
+            **base_form,
+            "amount": "450.00",
+            "scope": "future",
+            "occurrence_date": "2026-10-15",
+        },
+    )
+    assert future.status_code == 200
+
+    occurrences = client.get(
+        "/upcoming?from_date=2026-09-01&days=100"
+    ).json()
+    amounts = {
+        item["occurrence_date"]: item["amount"]
+        for item in occurrences
+        if item["description"] == "School Pedro"
+    }
+    assert amounts["2026-09-15"] == "440.00"
+    assert amounts["2026-10-15"] == "450.00"
+    assert amounts["2026-11-15"] == "450.00"
+
+    deleted = client.delete(
+        f"/ui/commitments/{commitment_id}/occurrences/2026-11-15"
+    )
+    assert deleted.status_code == 200
+    after_delete = client.get(
+        "/upcoming?from_date=2026-09-01&days=100"
+    ).json()
+    dates = {
+        item["occurrence_date"]
+        for item in after_delete
+        if item["description"] == "School Pedro"
+    }
+    assert "2026-11-15" not in dates
+
+    base = client.get(f"/commitments/{commitment_id}").json()
+    assert base["amount"] == "400.00"

@@ -31,9 +31,7 @@ def test_branded_login_and_session_flow(unauth_client: TestClient) -> None:
     assert 'value="editor"' in page.text
     assert 'value="viewer"' in page.text
 
-    invalid = unauth_client.post(
-        "/login", data={"role": "editor", "password": "wrong"}
-    )
+    invalid = unauth_client.post("/login", data={"role": "editor", "password": "wrong"})
     assert invalid.status_code == 401
     assert "Usuário ou senha incorretos" in invalid.text
 
@@ -165,6 +163,7 @@ def test_i18n_dashboard_and_partials(viewer_client: TestClient) -> None:
     assert "Saldo de Reserva" in res_pt.text
     assert "Próximos Vencimentos" in res_pt.text
     assert "Todos os Compromissos" in res_pt.text
+    assert "Privio © 2026 — Todos os direitos reservados." in res_pt.text
 
     # 2. English
     res_en = viewer_client.get("/?lang=en")
@@ -173,6 +172,7 @@ def test_i18n_dashboard_and_partials(viewer_client: TestClient) -> None:
     assert "Reserve Balance" in res_en.text
     assert "Upcoming Due Dates" in res_en.text
     assert "All Commitments" in res_en.text
+    assert "Privio © 2026 — All rights reserved." in res_en.text
 
     # 3. Italian
     res_it = viewer_client.get("/?lang=it")
@@ -181,6 +181,7 @@ def test_i18n_dashboard_and_partials(viewer_client: TestClient) -> None:
     assert "Saldo di Riserva" in res_it.text
     assert "Prossime Scadenze" in res_it.text
     assert "Tutti gli Impegni" in res_it.text
+    assert "Privio © 2026 — Tutti i diritti riservati." in res_it.text
 
     # 4. Partial upcoming table with i18n
     partial_en = viewer_client.get("/ui/upcoming?days=30&lang=en")
