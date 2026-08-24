@@ -110,6 +110,19 @@
             background-color: var(--pico-primary-background);
             color: var(--pico-primary-inverse);
         }
+        .month-navigation {
+            align-items: center;
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+        }
+        .month-navigation button {
+            height: 2.5rem;
+            margin: 0;
+            padding: 0;
+            width: 2.5rem;
+        }
     </style>
 </head>
 <body>
@@ -126,12 +139,12 @@
             <ul>
                 <li>
                     <div style="display: flex; gap: 0.3rem; align-items: center;">
-                        <a href="?lang=pt" class="lang-link {% if lang == 'pt' %}active{% endif %}">🇧🇷 PT</a>
-                        <a href="?lang=en" class="lang-link {% if lang == 'en' %}active{% endif %}">🇺🇸 EN</a>
-                        <a href="?lang=it" class="lang-link {% if lang == 'it' %}active{% endif %}">🇮🇹 IT</a>
+                        <a href="?lang=pt{% if selected_month_key %}&month={{ selected_month_key }}{% endif %}" class="lang-link {% if lang == 'pt' %}active{% endif %}">🇧🇷 PT</a>
+                        <a href="?lang=en{% if selected_month_key %}&month={{ selected_month_key }}{% endif %}" class="lang-link {% if lang == 'en' %}active{% endif %}">🇺🇸 EN</a>
+                        <a href="?lang=it{% if selected_month_key %}&month={{ selected_month_key }}{% endif %}" class="lang-link {% if lang == 'it' %}active{% endif %}">🇮🇹 IT</a>
                     </div>
                 </li>
-                <li><a href="/?lang={{ lang }}" class="contrast">{{ t('dashboard') }}</a></li>
+                <li><a href="/?lang={{ lang }}{% if selected_month_key %}&month={{ selected_month_key }}{% endif %}" class="contrast">{{ t('dashboard') }}</a></li>
                 <li><a href="/docs" target="_blank" class="secondary">{{ t('swagger_api') }}</a></li>
                 <li>
                     <form action="/logout" method="post" style="margin: 0;">

@@ -40,6 +40,55 @@ def test_dashboard_page_render(client: TestClient) -> None:
     )
 
 
+def test_month_navigation_filters_and_survives_actions(client: TestClient) -> None:
+    """The selected month controls the dashboard and survives HTMX actions."""
+    client.post(
+        "/commitments",
+        json={
+            "description": "August only",
+            "amount": "80.00",
+            "due_date": "2026-08-10",
+            "category": "Test",
+        },
+    )
+    september = client.post(
+        "/commitments",
+        json={
+            "description": "September only",
+            "amount": "90.00",
+            "due_date": "2026-09-10",
+            "category": "Test",
+        },
+    ).json()
+
+    page = client.get("/?month=2026-09&lang=pt")
+    assert page.status_code == 200
+    assert "Setembro 2026" in page.text
+    assert "September only" in page.text
+    assert (
+        "August only"
+        not in page.text.split('id="upcoming-section"', 1)[1].split("</section>", 1)[0]
+    )
+    assert "month=2026-08" in page.text
+    assert "month=2026-10" in page.text
+
+    edited = client.post(
+        f"/ui/commitments/{september['id']}/edit?month=2026-09",
+        data={
+            "description": "September changed",
+            "amount": "95.00",
+            "due_date": "2026-09-10",
+            "category": "Test",
+            "recurrence": "none",
+            "status": "pending",
+            "scope": "series",
+        },
+    )
+    assert edited.status_code == 200
+    assert "Setembro 2026" in edited.text
+    assert "September changed" in edited.text
+
+
 def test_ui_upcoming_partial(client: TestClient) -> None:
     """Test HTMX upcoming occurrences partial for 30/60/90 days."""
     client.post(

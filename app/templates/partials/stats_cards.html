@@ -55,7 +55,7 @@
             {% if user.role.value == 'editor' %}
                 <button 
                     class="primary"
-                    hx-get="/ui/commitments/new?lang={{ lang }}" 
+                    hx-get="/ui/commitments/new?lang={{ lang }}&month={{ selected_month_key }}"
                     hx-target="#modal-container" 
                     hx-swap="innerHTML"
                     style="margin-bottom: 0;">
@@ -63,7 +63,7 @@
                 </button>
                 <button 
                     class="secondary outline"
-                    hx-get="/ui/deposits/new?lang={{ lang }}" 
+                    hx-get="/ui/deposits/new?lang={{ lang }}&month={{ selected_month_key }}"
                     hx-target="#modal-container" 
                     hx-swap="innerHTML"
                     style="margin-bottom: 0;">

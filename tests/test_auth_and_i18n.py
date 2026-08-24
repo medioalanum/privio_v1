@@ -161,8 +161,8 @@ def test_i18n_dashboard_and_partials(viewer_client: TestClient) -> None:
     assert res_pt.status_code == 200
     assert "Recebido no Mês" in res_pt.text
     assert "Saldo Projetado" in res_pt.text
-    assert "Próximos Vencimentos" in res_pt.text
-    assert "Todos os Compromissos" in res_pt.text
+    assert "Contas do Mês" in res_pt.text
+    assert "Regras das Contas" in res_pt.text
     assert "Privio © 2026 — Todos os direitos reservados." in res_pt.text
 
     # 2. English
@@ -170,8 +170,8 @@ def test_i18n_dashboard_and_partials(viewer_client: TestClient) -> None:
     assert res_en.status_code == 200
     assert "Received This Month" in res_en.text
     assert "Projected Balance" in res_en.text
-    assert "Upcoming Due Dates" in res_en.text
-    assert "All Commitments" in res_en.text
+    assert "Bills This Month" in res_en.text
+    assert "Bill Rules" in res_en.text
     assert "Privio © 2026 — All rights reserved." in res_en.text
 
     # 3. Italian
@@ -179,19 +179,19 @@ def test_i18n_dashboard_and_partials(viewer_client: TestClient) -> None:
     assert res_it.status_code == 200
     assert "Ricevuto nel Mese" in res_it.text
     assert "Saldo Previsto" in res_it.text
-    assert "Prossime Scadenze" in res_it.text
-    assert "Tutti gli Impegni" in res_it.text
+    assert "Spese del Mese" in res_it.text
+    assert "Regole delle Spese" in res_it.text
     assert "Privio © 2026 — Tutti i diritti riservati." in res_it.text
 
     # 4. Partial upcoming table with i18n
     partial_en = viewer_client.get("/ui/upcoming?days=30&lang=en")
     assert partial_en.status_code == 200
-    assert "30 days" in partial_en.text
+    assert "Bills This Month" in partial_en.text
     assert "Due Date" in partial_en.text
 
     partial_it = viewer_client.get("/ui/upcoming?days=60&lang=it")
     assert partial_it.status_code == 200
-    assert "60 giorni" in partial_it.text
+    assert "Spese del Mese" in partial_it.text
     assert "Data Prevista" in partial_it.text
 
     # 5. Unsupported language falls back to Portuguese

@@ -5,29 +5,6 @@
             <small style="color: var(--pico-muted-color);">{{ t('upcoming_subtitle') }}</small>
         </div>
         
-        <div role="group">
-            <button 
-                class="{% if days == 30 %}primary{% else %}secondary outline{% endif %}" 
-                hx-get="/ui/upcoming?days=30&lang={{ lang }}" 
-                hx-target="#upcoming-section" 
-                hx-swap="outerHTML">
-                {{ t('days_30') }}
-            </button>
-            <button 
-                class="{% if days == 60 %}primary{% else %}secondary outline{% endif %}" 
-                hx-get="/ui/upcoming?days=60&lang={{ lang }}" 
-                hx-target="#upcoming-section" 
-                hx-swap="outerHTML">
-                {{ t('days_60') }}
-            </button>
-            <button 
-                class="{% if days == 90 %}primary{% else %}secondary outline{% endif %}" 
-                hx-get="/ui/upcoming?days=90&lang={{ lang }}" 
-                hx-target="#upcoming-section" 
-                hx-swap="outerHTML">
-                {{ t('days_90') }}
-            </button>
-        </div>
     </div>
 
     <div class="overflow-auto">
@@ -83,7 +60,7 @@
                                     <div class="action-btns">
                                         <button
                                             class="secondary outline"
-                                            hx-get="/ui/commitments/{{ item.original_commitment_id }}/edit?occurrence_date={{ item.occurrence_date.isoformat() }}&lang={{ lang }}"
+                                            hx-get="/ui/commitments/{{ item.original_commitment_id }}/edit?occurrence_date={{ item.occurrence_date.isoformat() }}&lang={{ lang }}&month={{ selected_month_key }}"
                                             hx-target="#modal-container"
                                             hx-swap="innerHTML"
                                             aria-label="{{ t('btn_edit') }}"
@@ -92,7 +69,7 @@
                                         </button>
                                         <button
                                             class="outline action-delete"
-                                            hx-delete="/ui/commitments/{{ item.original_commitment_id }}/occurrences/{{ item.occurrence_date.isoformat() }}?lang={{ lang }}"
+                                            hx-delete="/ui/commitments/{{ item.original_commitment_id }}/occurrences/{{ item.occurrence_date.isoformat() }}?lang={{ lang }}&month={{ selected_month_key }}"
                                             hx-target="#dashboard-content"
                                             hx-swap="innerHTML"
                                             aria-label="{{ t('btn_delete_occurrence') }}"
@@ -100,6 +77,18 @@
                                             hx-confirm="{{ t('confirm_delete_occurrence') }}">
                                             <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" stroke-width="2.2" stroke-linecap="round"/></svg>
                                         </button>
+                                        {% if item.recurrence.value != 'none' %}
+                                            <button
+                                                class="outline action-delete"
+                                                hx-delete="/ui/commitments/{{ item.original_commitment_id }}/occurrences/{{ item.occurrence_date.isoformat() }}?lang={{ lang }}&month={{ selected_month_key }}&scope=future"
+                                                hx-target="#dashboard-content"
+                                                hx-swap="innerHTML"
+                                                aria-label="{{ t('btn_delete_future') }}"
+                                                title="{{ t('btn_delete_future') }}"
+                                                hx-confirm="{{ t('confirm_delete_future') }}">
+                                                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 7h10m-6-3h6v3m3 3v10H8V10m7 3 4-4-4-4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                            </button>
+                                        {% endif %}
                                     </div>
                                 </td>
                             {% endif %}

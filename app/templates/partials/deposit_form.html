@@ -6,7 +6,7 @@
         </header>
 
         <form 
-            hx-post="/ui/deposits?lang={{ lang }}"
+            hx-post="/ui/deposits?lang={{ lang }}&month={{ selected_month_key }}"
             hx-target="#dashboard-content"
             hx-swap="innerHTML"
             hx-on::after-request="if(event.detail.successful) closeModal()"
