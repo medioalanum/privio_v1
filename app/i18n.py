@@ -10,7 +10,7 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "app_name": "Privio Commitments",
         "dashboard": "Dashboard",
         "swagger_api": "Swagger API",
-        "footer_text": "Privio © 2026 - Gestão Financeira Inteligente com FastAPI, SQLAlchemy, Jinja2 & HTMX",
+        "footer_text": "Privio © 2026 — Todos os direitos reservados.",
         # Language Switcher
         "lang_pt": "🇧🇷 Português",
         "lang_en": "🇺🇸 English",
@@ -101,7 +101,7 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "app_name": "Privio Commitments",
         "dashboard": "Dashboard",
         "swagger_api": "Swagger API",
-        "footer_text": "Privio © 2026 - Smart Financial Management with FastAPI, SQLAlchemy, Jinja2 & HTMX",
+        "footer_text": "Privio © 2026 — All rights reserved.",
         # Language Switcher
         "lang_pt": "🇧🇷 Português",
         "lang_en": "🇺🇸 English",
@@ -192,7 +192,7 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "app_name": "Privio Commitments",
         "dashboard": "Dashboard",
         "swagger_api": "API Swagger",
-        "footer_text": "Privio © 2026 - Gestione Finanziaria Intelligente con FastAPI, SQLAlchemy, Jinja2 & HTMX",
+        "footer_text": "Privio © 2026 — Tutti i diritti riservati.",
         # Language Switcher
         "lang_pt": "🇧🇷 Portoghese",
         "lang_en": "🇺🇸 Inglese",

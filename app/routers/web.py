@@ -32,7 +32,12 @@ from app.auth import (
 from app.config import settings
 from app.database import get_db
 from app.i18n import get_translations, normalize_lang, t
-from app.models.commitment import Commitment, RecurrenceEnum, StatusEnum
+from app.models.commitment import (
+    Commitment,
+    CommitmentAdjustment,
+    RecurrenceEnum,
+    StatusEnum,
+)
 from app.models.deposit import Deposit
 from app.services.recurrence import (
     calculate_suggested_monthly,
@@ -212,6 +217,7 @@ def edit_commitment_form(
     commitment_id: int,
     db: Annotated[Session, Depends(get_db)],
     user: Annotated[AuthenticatedUser, Depends(require_viewer_web)],
+    occurrence_date: Annotated[date | None, Query()] = None,
     lang: Annotated[str | None, Query()] = None,
 ) -> Response:
     """Render the modal form for editing an existing commitment."""
@@ -229,6 +235,7 @@ def edit_commitment_form(
             "request": request,
             "user": user,
             "commitment": commitment,
+            "occurrence_date": occurrence_date or commitment.due_date,
             "lang": lang_code,
             "t": lambda key, **kwargs: t(key, lang=lang_code, **kwargs),
             "today": date.today(),
@@ -293,6 +300,8 @@ def update_commitment_form_action(
     recurrence: Annotated[RecurrenceEnum, Form()] = RecurrenceEnum.NONE,
     status_val: Annotated[StatusEnum, Form(alias="status")] = StatusEnum.PENDING,
     is_estimate: Annotated[bool, Form()] = False,
+    scope: Annotated[str, Form()] = "series",
+    occurrence_date: Annotated[date | None, Form()] = None,
     lang: Annotated[str | None, Query()] = None,
 ) -> Response:
     """Handle commitment update from HTMX form and return updated dashboard partial."""
@@ -303,13 +312,35 @@ def update_commitment_form_action(
             status_code=status.HTTP_404_NOT_FOUND, detail="Commitment not found"
         )
 
-    commitment.description = description
-    commitment.amount = amount
-    commitment.due_date = due_date
-    commitment.category = category
-    commitment.recurrence = recurrence
-    commitment.status = status_val
-    commitment.is_estimate = is_estimate
+    if scope == "series" or occurrence_date is None:
+        commitment.description = description
+        commitment.amount = amount
+        commitment.due_date = due_date
+        commitment.category = category
+        commitment.recurrence = recurrence
+        commitment.status = status_val
+        commitment.is_estimate = is_estimate
+    else:
+        adjustment = db.scalar(
+            select(CommitmentAdjustment).where(
+                CommitmentAdjustment.commitment_id == commitment_id,
+                CommitmentAdjustment.effective_date == occurrence_date,
+                CommitmentAdjustment.scope == scope,
+            )
+        )
+        if adjustment is None:
+            adjustment = CommitmentAdjustment(
+                commitment_id=commitment_id,
+                effective_date=occurrence_date,
+                scope=scope,
+            )
+            db.add(adjustment)
+        adjustment.description = description
+        adjustment.amount = amount
+        adjustment.category = category
+        adjustment.status = status_val
+        adjustment.is_estimate = is_estimate
+        adjustment.is_deleted = False
 
     db.commit()
 
@@ -392,6 +423,54 @@ def delete_commitment_action(
         days=30,
         lang=lang_code,
         toast_message=toast,
+    )
+    return templates.TemplateResponse(
+        request=request,
+        name="partials/dashboard_content.html",
+        context=context,
+    )
+
+
+@router.delete(
+    "/ui/commitments/{commitment_id}/occurrences/{occurrence_date}",
+    response_class=HTMLResponse,
+)
+def delete_commitment_occurrence(
+    request: Request,
+    commitment_id: int,
+    occurrence_date: date,
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[AuthenticatedUser, Depends(require_editor_web)],
+    lang: Annotated[str | None, Query()] = None,
+) -> Response:
+    """Delete one projected occurrence while preserving the recurring series."""
+    commitment = db.get(Commitment, commitment_id)
+    if commitment is None:
+        raise HTTPException(status_code=404, detail="Commitment not found")
+    adjustment = db.scalar(
+        select(CommitmentAdjustment).where(
+            CommitmentAdjustment.commitment_id == commitment_id,
+            CommitmentAdjustment.effective_date == occurrence_date,
+            CommitmentAdjustment.scope == "single",
+        )
+    )
+    if adjustment is None:
+        adjustment = CommitmentAdjustment(
+            commitment_id=commitment_id,
+            effective_date=occurrence_date,
+            scope="single",
+        )
+        db.add(adjustment)
+    adjustment.is_deleted = True
+    db.commit()
+    lang_code = normalize_lang(lang)
+    context = _get_dashboard_context(
+        request,
+        db,
+        user=user,
+        days=30,
+        lang=lang_code,
+        toast_message=f"Ocorrência de {occurrence_date:%d/%m/%Y} excluída.",
     )
     return templates.TemplateResponse(
         request=request,

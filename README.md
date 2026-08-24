@@ -1,226 +1,222 @@
-# Privio Commitments API
+# Privio
 
-API REST para gerenciamento de compromissos financeiros e projeções orçamentárias construída com **FastAPI**, **SQLAlchemy 2.0**, **PostgreSQL**, empacotada e gerenciada com **uv**, com linter/formatador **Ruff** e checagem de tipos estáticos via **Astral ty**.
+Privio is a financial commitment and reserve management application built with
+FastAPI, SQLAlchemy 2.0, PostgreSQL, Jinja2, and HTMX. It provides a
+server-rendered dashboard, a REST API, role-based access control, recurring
+commitment projections, per-occurrence adjustments, and deposit tracking.
 
----
+## Features
 
-## 🛠️ Tecnologias e Ferramentas
+- Branded browser login with secure, signed, HTTP-only session cookies.
+- Editor and viewer roles configured through environment variables.
+- Commitment recurrence: weekly, monthly, semiannual, and annual.
+- Edit a single occurrence, the selected occurrence and all future ones, or the
+  entire recurring series.
+- Delete one occurrence or the complete recurring series.
+- Suggested monthly budget and upcoming due-date projections.
+- Reserve balance based on deposits and paid commitments.
+- Portuguese, English, and Italian dashboard translations.
+- Server-rendered UI with Jinja2, HTMX, and Pico.css.
+- OpenAPI documentation through FastAPI Swagger UI and ReDoc.
 
-- **Python**: `>= 3.11`
-- **Gerenciador de Pacotes e Ambiente**: [uv](https://docs.astral.sh/uv/)
-- **Framework Web**: [FastAPI](https://fastapi.tiangolo.com/)
-- **Frontend Server-Rendered**: [Jinja2](https://jinja.palletsprojects.com/) + [HTMX](https://htmx.org/) (sem React/Vue)
-- **Design & CSS**: [Pico.css v2](https://picocss.com/) via CDN (responsivo e temas claro/escuro nativos)
-- **ORM & Banco de Dados**: [SQLAlchemy 2.0](https://www.sqlalchemy.org/) + [PostgreSQL](https://www.postgresql.org/) (driver `psycopg 3`)
-- **Validação de Schemas**: [Pydantic v2](https://docs.pydantic.dev/) + `pydantic-settings`
-- **Linter & Formatação**: [Ruff](https://docs.astral.sh/ruff/)
-- **Type Checker**: [ty (Astral)](https://github.com/astral-sh/ty)
-- **Testes Automatizados**: [pytest](https://docs.pytest.org/) + `httpx`
+## Technology Stack
 
----
+- Python 3.11+
+- [FastAPI](https://fastapi.tiangolo.com/)
+- [SQLAlchemy 2.0](https://www.sqlalchemy.org/)
+- [PostgreSQL](https://www.postgresql.org/) with psycopg 3
+- [Pydantic v2](https://docs.pydantic.dev/) and pydantic-settings
+- [Jinja2](https://jinja.palletsprojects.com/) and [HTMX](https://htmx.org/)
+- [Pico.css v2](https://picocss.com/)
+- [uv](https://docs.astral.sh/uv/) for dependency management
+- [Ruff](https://docs.astral.sh/ruff/) for linting and formatting
+- [ty](https://github.com/astral-sh/ty) for static type checking
+- pytest and HTTPX for automated tests
 
-## 📁 Estrutura do Projeto
+## Project Structure
 
-```
+```text
 privio_v1/
-├── .env.example              # Exemplo de variáveis de ambiente (Postgres, host, debug)
-├── .gitignore                # Arquivos ignorados pelo Git
-├── pyproject.toml            # Configurações de dependências, Ruff, ty e pytest
-├── uv.lock                   # Lockfile determinístico do uv
-├── README.md                 # Documentação do projeto
-├── scripts/
-│   ├── check.sh              # Script shell para rodar 'ruff check', 'ruff format --check' e 'ty check'
-│   └── check.py              # Runner Python multiplataforma para os mesmos checks
 ├── app/
-│   ├── __init__.py
-│   ├── config.py             # Configurações via pydantic-settings
-│   ├── database.py           # Engine SQLAlchemy, SessionLocal e get_db() dependency
-│   ├── main.py               # Instância FastAPI, middlewares e registro de rotas
-│   ├── models/
-│   │   ├── __init__.py
-│   │   └── commitment.py     # Modelo SQLAlchemy Commitment e Enums
-│   ├── schemas/
-│   │   ├── __init__.py
-│   │   └── commitment.py     # Schemas Pydantic (Create, Update, Response, Occurrence, SuggestedMonthly)
-│   ├── services/
-│   │   ├── __init__.py
-│   │   └── recurrence.py     # Resolução de recorrências e projeções mensais
-│   └── routers/
-│       ├── __init__.py
-│       └── commitments.py    # Rotas CRUD e endpoints customizados
-└── tests/
-    ├── __init__.py
-    ├── conftest.py           # Fixtures com banco SQLite in-memory para testes isolados
-    └── test_commitments.py   # Testes unitários e de integração
+│   ├── models/              # SQLAlchemy models and recurrence adjustments
+│   ├── routers/             # REST API and server-rendered UI routes
+│   ├── schemas/             # Pydantic request and response schemas
+│   ├── services/            # Recurrence and reserve calculations
+│   ├── templates/           # Jinja2 dashboard and login templates
+│   ├── auth.py              # Basic Auth, browser sessions, and RBAC
+│   ├── config.py            # Environment-based application settings
+│   ├── database.py          # SQLAlchemy engine and session management
+│   ├── i18n.py              # Portuguese, English, and Italian translations
+│   └── main.py              # FastAPI application entry point
+├── scripts/                 # Quality checks and maintenance utilities
+├── tests/                   # Unit and integration tests
+├── .env.example             # Environment variable template
+├── Dockerfile               # Production container image
+├── render.yaml              # Render Blueprint definition
+├── fly.toml                 # Fly.io configuration
+├── pyproject.toml           # Project and tool configuration
+└── uv.lock                  # Reproducible dependency lockfile
 ```
 
----
+## Local Setup
 
-## 🚀 Como Executar o Projeto
+### 1. Install uv
 
-### 1. Pré-requisitos e Instalação do uv
-
-Se ainda não possuir o `uv` instalado:
 ```bash
 curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
-### 2. Configurar Variáveis de Ambiente
+### 2. Configure environment variables
 
-Copie o arquivo `.env.example` para `.env`:
 ```bash
 cp .env.example .env
 ```
 
-Edite as configurações no `.env`:
+Update `.env` with your PostgreSQL connection and private credentials:
+
 ```ini
-# Conexão PostgreSQL
 DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/privio_db
 
-# Credenciais HTTP Basic Auth
+APP_NAME=Privio Commitments API
+ENVIRONMENT=development
+DEBUG=true
+HOST=0.0.0.0
+PORT=8000
+
 EDITOR_USER=editor
-EDITOR_PASS=editor123
+EDITOR_PASS=replace-with-a-strong-password
 VIEWER_USER=viewer
-VIEWER_PASS=viewer123
+VIEWER_PASS=replace-with-a-strong-password
+SESSION_SECRET=replace-with-a-long-random-value
 ```
 
-### 3. Autenticação & Papéis (HTTP Basic Auth)
+Never commit `.env`, production passwords, database connection strings, or the
+session secret.
 
-A aplicação implementa **HTTP Basic Auth** com dois níveis de acesso configuráveis via `.env`:
-- **Editor (`EDITOR_USER` / `EDITOR_PASS`)**:
-  - Acesso de leitura e escrita (Criar, Editar, Atualizar status e Excluir compromissos e depósitos).
-- **Viewer (`VIEWER_USER` / `VIEWER_PASS`)**:
-  - Acesso somente leitura (Visualizar dashboard, listar compromissos, próximos vencimentos, sugestão mensal e saldo de reserva).
-  - Tentativas de mutação (POST/PUT/PATCH/DELETE) retornam **HTTP 403 Forbidden**.
+### 3. Install dependencies
 
-### 4. Internacionalização (i18n para PT / EN / IT)
-
-O sistema conta com internacionalização via dicionário Python nativo com troca dinâmica por parâmetro de URL:
-- Português (padrão): `http://localhost:8000/?lang=pt`
-- Inglês: `http://localhost:8000/?lang=en`
-- Italiano: `http://localhost:8000/?lang=it`
-
-O seletor de idiomas no topo da página permite alternar instantaneamente entre os idiomas.
-
-### 5. Instalar Dependências
-
-Sincronize o ambiente virtual com `uv`:
 ```bash
 uv sync --all-groups
 ```
 
-### 4. Iniciar o Servidor de Desenvolvimento
+### 4. Start the development server
 
 ```bash
 uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-Acesse a documentação interativa Swagger/OpenAPI em:
-- **Swagger UI**: [http://localhost:8000/docs](http://localhost:8000/docs)
-- **ReDoc**: [http://localhost:8000/redoc](http://localhost:8000/redoc)
+Open the following pages:
 
----
+- Dashboard: <http://localhost:8000/>
+- Login: <http://localhost:8000/login>
+- Swagger UI: <http://localhost:8000/docs>
+- ReDoc: <http://localhost:8000/redoc>
 
-## 🔍 Qualidade de Código & Tipagem
+Database tables are created during application startup with
+`Base.metadata.create_all()`.
 
-Para rodar todos os linters, checagens de formatação e verificação de tipos (`ruff check`, `ruff format --check` e `ty check`):
+## Authentication and Roles
+
+The browser UI uses a branded login page and a signed session cookie. The REST
+API also accepts HTTP Basic Auth for scripts and external clients.
+
+- **Editor:** read access plus creation, editing, status changes, and deletion.
+- **Viewer:** read-only access to the dashboard, commitments, projections, and
+  reserve balance. Mutation attempts return HTTP 403.
+
+The session cookie is HTTP-only, uses `SameSite=Lax`, and is marked `Secure` in
+production. Passwords remain in environment variables and are never stored in
+the cookie.
+
+## Recurring Commitment Changes
+
+Recurring commitments support three edit scopes:
+
+- **This occurrence only:** creates a dated exception without changing other
+  months.
+- **This and future occurrences:** applies a dated rule from the selected
+  occurrence onward.
+- **Entire series:** updates the base commitment, including its historical
+  representation.
+
+Users may also delete one projected occurrence or delete the complete series.
+Occurrence exceptions are stored separately from the base commitment so future
+projections remain consistent.
+
+## Internationalization
+
+The dashboard supports a URL language parameter and a header selector:
+
+- Portuguese: `/?lang=pt`
+- English: `/?lang=en`
+- Italian: `/?lang=it`
+
+Unsupported values fall back to Portuguese.
+
+## API Overview
+
+### Commitments
+
+| Method | Endpoint | Purpose |
+|---|---|---|
+| `POST` | `/commitments` | Create a commitment |
+| `GET` | `/commitments` | List and filter commitments |
+| `GET` | `/commitments/{id}` | Retrieve one commitment |
+| `PUT` | `/commitments/{id}` | Fully replace a commitment |
+| `PATCH` | `/commitments/{id}` | Partially update a commitment |
+| `DELETE` | `/commitments/{id}` | Delete the complete commitment series |
+| `GET` | `/upcoming?days=30` | Project upcoming occurrences |
+| `GET` | `/suggested-monthly` | Calculate the suggested monthly budget |
+
+### Deposits
+
+| Method | Endpoint | Purpose |
+|---|---|---|
+| `POST` | `/deposits` | Record a deposit |
+| `GET` | `/deposits` | List deposits |
+| `GET` | `/deposits/{id}` | Retrieve one deposit |
+| `PUT` | `/deposits/{id}` | Fully replace a deposit |
+| `PATCH` | `/deposits/{id}` | Partially update a deposit |
+| `DELETE` | `/deposits/{id}` | Delete a deposit |
+| `GET` | `/reserve-balance` | Calculate the current reserve balance |
+
+## Quality Checks
+
+Run all configured checks:
 
 ```bash
-# Via script shell
 ./scripts/check.sh
-
-# Ou via runner Python
-uv run python scripts/check.py
 ```
 
-### Comandos Individuais
+Or run them individually:
+
 ```bash
-# Linting
 uv run ruff check .
-
-# Formatação
-uv run ruff format --check .   # apenas verificar
-uv run ruff format .           # formatar arquivos
-
-# Checagem de tipos com ty
+uv run ruff format --check .
 uv run ty check .
-```
-
----
-
-## 🧪 Testes Automatizados
-
-Os testes rodam de forma isolada utilizando banco SQLite in-memory:
-
-```bash
 uv run pytest
 ```
 
----
+Tests use an isolated in-memory SQLite database.
 
-## ☁️ Deploy em Produção (Render / Fly.io + Neon PostgreSQL)
+## Production Deployment
 
-O projeto já inclui todos os arquivos de configuração necessários para deploy:
-- **Neon**: Compatibilidade com PostgreSQL Serverless (pooling e auto-reconexão com `pool_pre_ping=True`).
-- **Render**: Arquivo [`render.yaml`](file:///Users/alanviana/Projects/privio_v1/render.yaml) para deploy com 1 clique via Blueprint.
-- **Fly.io**: Arquivos [`fly.toml`](file:///Users/alanviana/Projects/privio_v1/fly.toml), [`Dockerfile`](file:///Users/alanviana/Projects/privio_v1/Dockerfile) e [`.dockerignore`](file:///Users/alanviana/Projects/privio_v1/.dockerignore).
+The repository includes production configuration for Render and Fly.io and is
+compatible with Neon PostgreSQL.
 
-📖 **Confira o passo a passo detalhado no [Guia de Deploy (DEPLOYMENT.md)](file:///Users/alanviana/Projects/privio_v1/DEPLOYMENT.md).**
+### Render and Neon
 
----
+1. Create a Neon project and copy its pooled PostgreSQL connection string.
+2. Connect this repository to Render as a Blueprint.
+3. Set `DATABASE_URL` in the Render dashboard.
+4. Render generates editor, viewer, and session secrets from `render.yaml`.
+5. Deploy and verify `/health`.
 
-## 🖥️ Frontend Server-Rendered (Jinja2 + HTMX + Pico.css)
+The application normalizes standard `postgresql://` URLs for psycopg 3 and uses
+connection health checks suitable for serverless PostgreSQL.
 
-Acesse `http://localhost:8000/` no navegador para abrir o Dashboard:
-- **Cards de Métricas**: Total Sugerido do Mês (com detalhamento de mensais, semestrais e anuais) e Saldo de Reserva em tempo real.
-- **Próximos Vencimentos (30 / 60 / 90 dias)**: Alternância dinâmica via HTMX (`/ui/upcoming?days=30|60|90`) com projeção de ocorrências de recorrência.
-- **Formulário de Criar/Editar Compromisso**: Modais dinâmicos com salvamento e validação assíncrona via HTMX sem recarregar a página.
-- **Ações Rápidas**: Marcar como pago/pendente com 1 clique, exclusão com confirmação e registro rápido de depósitos na reserva.
+See [DEPLOYMENT.md](DEPLOYMENT.md) for the complete deployment guide.
 
----
+## License and Copyright
 
-## 📌 Endpoints da API
-
-### CRUD de Compromissos (`Commitment`)
-
-| Método | Rota | Descrição |
-|---|---|---|
-| `POST` | `/commitments` | Cria um novo compromisso |
-| `GET` | `/commitments` | Lista compromissos (com filtros `category`, `status`, `recurrence`, paginação) |
-| `GET` | `/commitments/{id}` | Obtém detalhes de um compromisso por ID |
-| `PUT` | `/commitments/{id}` | Atualização completa de um compromisso |
-| `PATCH` | `/commitments/{id}` | Atualização parcial de um compromisso |
-| `DELETE` | `/commitments/{id}` | Remove um compromisso (HTTP 204) |
-
-### CRUD de Depósitos (`Deposit`)
-
-| Método | Rota | Descrição |
-|---|---|---|
-| `POST` | `/deposits` | Registra uma nova transferência/depósito |
-| `GET` | `/deposits` | Lista depósitos (filtros `start_date`, `end_date`, paginação) |
-| `GET` | `/deposits/{id}` | Obtém detalhes de um depósito por ID |
-| `PUT` | `/deposits/{id}` | Atualização completa de um depósito |
-| `PATCH` | `/deposits/{id}` | Atualização parcial de um depósito |
-| `DELETE` | `/deposits/{id}` | Remove um depósito (HTTP 204) |
-
-### Endpoints Especiais
-
-#### `GET /upcoming?days=30`
-Projeta as próximas ocorrências de compromissos que vencem nos próximos `N` dias, resolvendo automaticamente recorrências (`weekly`, `monthly`, `semiannual`, `annual`) a partir do `due_date` original e ordenando cronologicamente.
-
-- Parâmetros:
-  - `days` (opcional, padrão `30`): Janela em dias para frente.
-  - `from_date` (opcional, padrão `hoje`): Data base de início.
-
-#### `GET /suggested-monthly`
-Calcula o orçamento mensal sugerido baseado na fórmula:
-$$\text{Total Sugerido} = \sum \text{Mensais} + \frac{\sum \text{Anuais}}{12} + \frac{\sum \text{Semestrais}}{6}$$
-Considera apenas compromissos ativos (`status == 'pending'`).
-
-- Parâmetros:
-  - `only_active` (opcional, padrão `true`): Considera apenas pendentes.
-
-#### `GET /reserve-balance`
-Calcula o saldo de reserva da conta/reserva financeira:
-$$\text{Saldo de Reserva} = \sum \text{Depósitos} - \sum \text{Compromissos Pagos}$$
-Retorna o total de depósitos, o total de compromissos já pagos, o saldo líquido e a contagem de registros.
+Privio © 2026 — All rights reserved.

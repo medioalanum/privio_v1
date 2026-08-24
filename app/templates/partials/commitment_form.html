@@ -17,6 +17,19 @@
             hx-swap="innerHTML"
             hx-on::after-request="if(event.detail.successful) closeModal()"
             style="margin-top: 1rem;">
+            {% if commitment %}
+                <input type="hidden" name="occurrence_date" value="{{ occurrence_date.isoformat() }}">
+                {% if commitment.recurrence.value != 'none' %}
+                    <fieldset>
+                        <legend>Aplicar alterações</legend>
+                        <label><input type="radio" name="scope" value="single" checked> Somente {{ occurrence_date.strftime('%m/%Y') }}</label>
+                        <label><input type="radio" name="scope" value="future"> Este mês e os próximos</label>
+                        <label><input type="radio" name="scope" value="series"> Toda a série, inclusive anteriores</label>
+                    </fieldset>
+                {% else %}
+                    <input type="hidden" name="scope" value="series">
+                {% endif %}
+            {% endif %}
             
             <label for="description">
                 {{ t('field_description') }}
@@ -50,7 +63,7 @@
                         type="date" 
                         id="due_date" 
                         name="due_date" 
-                        value="{{ commitment.due_date.isoformat() if commitment else today.isoformat() }}" 
+                        value="{{ occurrence_date.isoformat() if commitment else today.isoformat() }}"
                         required>
                 </label>
             </div>

@@ -6,7 +6,12 @@ from decimal import ROUND_HALF_UP, Decimal
 
 from dateutil.relativedelta import relativedelta
 
-from app.models.commitment import Commitment, RecurrenceEnum, StatusEnum
+from app.models.commitment import (
+    Commitment,
+    CommitmentAdjustment,
+    RecurrenceEnum,
+    StatusEnum,
+)
 from app.schemas.commitment import (
     CommitmentOccurrenceResponse,
     SuggestedMonthlyResponse,
@@ -16,6 +21,41 @@ from app.schemas.commitment import (
 def _quantize_currency(value: Decimal) -> Decimal:
     """Helper to round monetary amounts to 2 decimal places."""
     return value.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+
+def _adjustment_for(
+    item: Commitment, occurrence_date: date
+) -> CommitmentAdjustment | None:
+    """Return the applicable single override or latest effective future override."""
+    single = next(
+        (
+            adjustment
+            for adjustment in item.adjustments
+            if adjustment.scope == "single"
+            and adjustment.effective_date == occurrence_date
+        ),
+        None,
+    )
+    if single is not None:
+        return single
+    future = [
+        adjustment
+        for adjustment in item.adjustments
+        if adjustment.scope == "future" and adjustment.effective_date <= occurrence_date
+    ]
+    if not future:
+        return None
+    return max(future, key=lambda adjustment: adjustment.effective_date)
+
+
+def _apply_adjustment(
+    occurrence: CommitmentOccurrenceResponse, adjustment: CommitmentAdjustment
+) -> None:
+    """Apply populated adjustment fields to a projected occurrence."""
+    for field in ("description", "amount", "is_estimate", "category", "status"):
+        value = getattr(adjustment, field)
+        if value is not None:
+            setattr(occurrence, field, value)
 
 
 def resolve_upcoming_occurrences(
@@ -189,6 +229,19 @@ def resolve_upcoming_occurrences(
                     )
                 k += 1
 
+    item_by_id = {item.id: item for item in commitments}
+    adjusted_occurrences: list[CommitmentOccurrenceResponse] = []
+    for occurrence in occurrences:
+        adjustment = _adjustment_for(
+            item_by_id[occurrence.original_commitment_id], occurrence.occurrence_date
+        )
+        if adjustment is not None:
+            if adjustment.is_deleted:
+                continue
+            _apply_adjustment(occurrence, adjustment)
+        adjusted_occurrences.append(occurrence)
+
+    occurrences = adjusted_occurrences
     # Sort all occurrences by occurrence_date, then by description
     occurrences.sort(key=lambda o: (o.occurrence_date, o.original_commitment_id))
     return occurrences
@@ -218,13 +271,22 @@ def calculate_suggested_monthly(
         if only_active and item.status != StatusEnum.PENDING:
             continue
 
+        current_adjustment = _adjustment_for(item, date.today())
+        if current_adjustment is not None and current_adjustment.is_deleted:
+            continue
+        amount = (
+            current_adjustment.amount
+            if current_adjustment is not None and current_adjustment.amount is not None
+            else item.amount
+        )
+
         active_count += 1
         if item.recurrence == RecurrenceEnum.MONTHLY:
-            monthly_sum += item.amount
+            monthly_sum += amount
         elif item.recurrence == RecurrenceEnum.SEMIANNUAL:
-            semiannual_sum += item.amount
+            semiannual_sum += amount
         elif item.recurrence == RecurrenceEnum.ANNUAL:
-            annual_sum += item.amount
+            annual_sum += amount
 
     semiannual_contribution = _quantize_currency(semiannual_sum / Decimal(6))
     annual_contribution = _quantize_currency(annual_sum / Decimal(12))
