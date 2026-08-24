@@ -1,0 +1,113 @@
+<div class="modal-backdrop" onclick="if(event.target === this) closeModal()">
+    <article class="modal-content">
+        <header style="display: flex; justify-content: space-between; align-items: center;">
+            <h4 style="margin-bottom: 0;">
+                {% if commitment %}{{ t('modal_edit_commitment') }}{% else %}{{ t('modal_new_commitment') }}{% endif %}
+            </h4>
+            <button type="button" aria-label="Close" class="contrast outline" onclick="closeModal()" style="border: none; font-size: 1.5rem; line-height: 1; padding: 0;">&times;</button>
+        </header>
+
+        <form 
+            {% if commitment %}
+                hx-post="/ui/commitments/{{ commitment.id }}/edit?lang={{ lang }}"
+            {% else %}
+                hx-post="/ui/commitments?lang={{ lang }}"
+            {% endif %}
+            hx-target="#dashboard-content"
+            hx-swap="innerHTML"
+            hx-on::after-request="if(event.detail.successful) closeModal()"
+            style="margin-top: 1rem;">
+            
+            <label for="description">
+                {{ t('field_description') }}
+                <input 
+                    type="text" 
+                    id="description" 
+                    name="description" 
+                    value="{{ commitment.description if commitment else '' }}" 
+                    placeholder="{{ t('field_description_placeholder') }}" 
+                    required 
+                    maxlength="255">
+            </label>
+
+            <div class="grid">
+                <label for="amount">
+                    {{ t('field_amount') }}
+                    <input 
+                        type="number" 
+                        step="0.01" 
+                        min="0.01" 
+                        id="amount" 
+                        name="amount" 
+                        value="{{ commitment.amount if commitment else '' }}" 
+                        placeholder="0.00" 
+                        required>
+                </label>
+
+                <label for="due_date">
+                    {{ t('field_due_date') }}
+                    <input 
+                        type="date" 
+                        id="due_date" 
+                        name="due_date" 
+                        value="{{ commitment.due_date.isoformat() if commitment else today.isoformat() }}" 
+                        required>
+                </label>
+            </div>
+
+            <div class="grid">
+                <label for="category">
+                    {{ t('field_category') }}
+                    <input 
+                        type="text" 
+                        id="category" 
+                        name="category" 
+                        value="{{ commitment.category if commitment else 'General' }}" 
+                        placeholder="{{ t('field_category_placeholder') }}" 
+                        required 
+                        maxlength="100">
+                </label>
+
+                <label for="recurrence">
+                    {{ t('field_recurrence') }}
+                    <select id="recurrence" name="recurrence" required>
+                        <option value="none" {% if commitment and commitment.recurrence.value == 'none' %}selected{% endif %}>{{ t('rec_none') }}</option>
+                        <option value="weekly" {% if commitment and commitment.recurrence.value == 'weekly' %}selected{% endif %}>{{ t('rec_weekly') }}</option>
+                        <option value="monthly" {% if not commitment or commitment.recurrence.value == 'monthly' %}selected{% endif %}>{{ t('rec_monthly') }}</option>
+                        <option value="semiannual" {% if commitment and commitment.recurrence.value == 'semiannual' %}selected{% endif %}>{{ t('rec_semiannual') }}</option>
+                        <option value="annual" {% if commitment and commitment.recurrence.value == 'annual' %}selected{% endif %}>{{ t('rec_annual') }}</option>
+                    </select>
+                </label>
+            </div>
+
+            <div class="grid" style="align-items: center; margin-top: 0.5rem; margin-bottom: 1.5rem;">
+                <label for="status">
+                    {{ t('field_status') }}
+                    <select id="status" name="status" required>
+                        <option value="pending" {% if not commitment or commitment.status.value == 'pending' %}selected{% endif %}>{{ t('status_pending') }}</option>
+                        <option value="paid" {% if commitment and commitment.status.value == 'paid' %}selected{% endif %}>{{ t('status_paid') }}</option>
+                    </select>
+                </label>
+
+                <fieldset style="margin-top: 1.5rem;">
+                    <label for="is_estimate">
+                        <input 
+                            type="checkbox" 
+                            id="is_estimate" 
+                            name="is_estimate" 
+                            value="true" 
+                            {% if commitment and commitment.is_estimate %}checked{% endif %}>
+                        {{ t('field_is_estimate') }}
+                    </label>
+                </fieldset>
+            </div>
+
+            <footer style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1rem;">
+                <button type="button" class="secondary outline" onclick="closeModal()">{{ t('btn_cancel') }}</button>
+                <button type="submit" class="primary">
+                    {% if commitment %}{{ t('btn_save_changes') }}{% else %}{{ t('btn_create_commitment') }}{% endif %}
+                </button>
+            </footer>
+        </form>
+    </article>
+</div>

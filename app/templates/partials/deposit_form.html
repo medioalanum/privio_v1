@@ -1,0 +1,55 @@
+<div class="modal-backdrop" onclick="if(event.target === this) closeModal()">
+    <article class="modal-content">
+        <header style="display: flex; justify-content: space-between; align-items: center;">
+            <h4 style="margin-bottom: 0;">{{ t('modal_new_deposit') }}</h4>
+            <button type="button" aria-label="Close" class="contrast outline" onclick="closeModal()" style="border: none; font-size: 1.5rem; line-height: 1; padding: 0;">&times;</button>
+        </header>
+
+        <form 
+            hx-post="/ui/deposits?lang={{ lang }}"
+            hx-target="#dashboard-content"
+            hx-swap="innerHTML"
+            hx-on::after-request="if(event.detail.successful) closeModal()"
+            style="margin-top: 1rem;">
+            
+            <div class="grid">
+                <label for="deposit-amount">
+                    {{ t('field_deposit_amount') }}
+                    <input 
+                        type="number" 
+                        step="0.01" 
+                        min="0.01" 
+                        id="deposit-amount" 
+                        name="amount" 
+                        placeholder="0.00" 
+                        required>
+                </label>
+
+                <label for="deposit-date">
+                    {{ t('field_deposit_date') }}
+                    <input 
+                        type="date" 
+                        id="deposit-date" 
+                        name="date" 
+                        value="{{ today.isoformat() }}" 
+                        required>
+                </label>
+            </div>
+
+            <label for="deposit-note">
+                {{ t('field_deposit_note') }}
+                <input 
+                    type="text" 
+                    id="deposit-note" 
+                    name="note" 
+                    placeholder="{{ t('field_deposit_note_placeholder') }}" 
+                    maxlength="255">
+            </label>
+
+            <footer style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1rem;">
+                <button type="button" class="secondary outline" onclick="closeModal()">{{ t('btn_cancel') }}</button>
+                <button type="submit" class="primary">{{ t('btn_save_deposit') }}</button>
+            </footer>
+        </form>
+    </article>
+</div>

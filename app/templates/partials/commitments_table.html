@@ -1,0 +1,102 @@
+<section id="commitments-section" class="metric-card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <div>
+            <h3 style="margin-bottom: 0;">{{ t('commitments_title') }}</h3>
+            <small style="color: var(--pico-muted-color);">{{ t('commitments_subtitle') }}</small>
+        </div>
+        {% if user.role.value == 'editor' %}
+            <button 
+                class="primary"
+                hx-get="/ui/commitments/new?lang={{ lang }}" 
+                hx-target="#modal-container" 
+                hx-swap="innerHTML"
+                style="margin-bottom: 0;">
+                {{ t('new_commitment_btn') }}
+            </button>
+        {% endif %}
+    </div>
+
+    <div class="overflow-auto">
+        <table class="striped">
+            <thead>
+                <tr>
+                    <th>{{ t('th_description') }}</th>
+                    <th>{{ t('th_category') }}</th>
+                    <th>{{ t('th_amount') }}</th>
+                    <th>{{ t('th_base_due_date') }}</th>
+                    <th>{{ t('th_recurrence') }}</th>
+                    <th>{{ t('th_status') }}</th>
+                    {% if user.role.value == 'editor' %}
+                        <th style="text-align: right;">{{ t('th_actions') }}</th>
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody id="commitments-tbody">
+                {% if commitments %}
+                    {% for c in commitments %}
+                        <tr id="commitment-row-{{ c.id }}">
+                            <td>
+                                <strong>{{ c.description }}</strong>
+                                {% if c.is_estimate %}
+                                    <span class="badge badge-estimate" title="{{ t('estimate_badge') }}">{{ t('estimate_badge') }}</span>
+                                {% endif %}
+                            </td>
+                            <td><small>{{ c.category }}</small></td>
+                            <td><strong>R$ {{ "{:,.2f}".format(c.amount) }}</strong></td>
+                            <td>{{ c.due_date.strftime('%d/%m/%Y') }}</td>
+                            <td>
+                                <span class="badge badge-recurrence">
+                                    {{ t('rec_' + c.recurrence.value) }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge {% if c.status.value == 'paid' %}badge-paid{% else %}badge-pending{% endif %}">
+                                    {{ t('status_' + c.status.value) }}
+                                </span>
+                            </td>
+                            {% if user.role.value == 'editor' %}
+                                <td style="text-align: right;">
+                                    <div class="action-btns" style="justify-content: flex-end;">
+                                        <button 
+                                            class="outline {% if c.status.value == 'paid' %}secondary{% else %}primary{% endif %}"
+                                            hx-post="/ui/commitments/{{ c.id }}/toggle-paid?lang={{ lang }}"
+                                            hx-target="#dashboard-content"
+                                            hx-swap="innerHTML"
+                                            title="Toggle Status">
+                                            {% if c.status.value == 'paid' %}{{ t('btn_reopen') }}{% else %}{{ t('btn_mark_paid') }}{% endif %}
+                                        </button>
+                                        
+                                        <button 
+                                            class="secondary outline"
+                                            hx-get="/ui/commitments/{{ c.id }}/edit?lang={{ lang }}"
+                                            hx-target="#modal-container"
+                                            hx-swap="innerHTML"
+                                            title="{{ t('btn_edit') }}">
+                                            {{ t('btn_edit') }}
+                                        </button>
+
+                                        <button 
+                                            class="outline"
+                                            style="color: #ef4444; border-color: #ef4444;"
+                                            hx-delete="/ui/commitments/{{ c.id }}?lang={{ lang }}"
+                                            hx-target="#dashboard-content"
+                                            hx-swap="innerHTML"
+                                            hx-confirm="{{ t('confirm_delete_commitment') }}">
+                                            {{ t('btn_delete') }}
+                                        </button>
+                                    </div>
+                                </td>
+                            {% endif %}
+                        </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="{% if user.role.value == 'editor' %}7{% else %}6{% endif %}" style="text-align: center; color: var(--pico-muted-color); padding: 2rem;">
+                            {{ t('no_commitments') }}
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</section>

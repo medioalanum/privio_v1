@@ -1,0 +1,14 @@
+.venv
+.uv-cache
+uv.cache
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.git
+.gitignore
+.env
+.pytest_cache
+.ruff_cache
+.ty_cache
+tests/
