@@ -39,11 +39,8 @@ from app.models.commitment import (
     StatusEnum,
 )
 from app.models.deposit import Deposit
-from app.services.recurrence import (
-    calculate_suggested_monthly,
-    resolve_upcoming_occurrences,
-)
-from app.services.reserve import calculate_reserve_balance
+from app.services.recurrence import resolve_upcoming_occurrences
+from app.services.reserve import calculate_monthly_cash_flow
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
@@ -123,9 +120,8 @@ def _get_dashboard_context(
         select(Commitment).order_by(Commitment.due_date.asc(), Commitment.id.asc())
     ).all()
 
-    suggested = calculate_suggested_monthly(commitments)
-    reserve = calculate_reserve_balance(db)
     month_start = today.replace(day=1)
+    cash_flow = calculate_monthly_cash_flow(db, commitments, month_start)
     occurrences = resolve_upcoming_occurrences(
         commitments, from_date=month_start, days=days
     )
@@ -147,8 +143,7 @@ def _get_dashboard_context(
         "lang": lang_code,
         "t": lambda key, **kwargs: t(key, lang=lang_code, **kwargs),
         "translations": get_translations(lang_code),
-        "suggested": suggested,
-        "reserve": reserve,
+        "cash_flow": cash_flow,
         "occurrences": occurrences,
         "current_month_occurrences": current_month_occurrences,
         "commitments": commitments,

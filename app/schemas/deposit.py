@@ -62,3 +62,19 @@ class ReserveBalanceResponse(BaseModel):
     paid_commitments_count: int = Field(
         ..., description="Total number of paid commitments"
     )
+
+
+class MonthlyCashFlowResponse(BaseModel):
+    """Financial position for the calendar month containing ``month``."""
+
+    month: datetime.date
+    received: Decimal
+    bills_total: Decimal
+    paid: Decimal
+    pending: Decimal
+    available_now: Decimal
+    projected_balance: Decimal
+    deposits_count: int
+    bills_count: int
+    paid_count: int
+    pending_count: int

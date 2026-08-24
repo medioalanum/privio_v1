@@ -159,8 +159,8 @@ def test_i18n_dashboard_and_partials(viewer_client: TestClient) -> None:
     # 1. Portuguese (default)
     res_pt = viewer_client.get("/?lang=pt")
     assert res_pt.status_code == 200
-    assert "Total Sugerido do Mês" in res_pt.text
-    assert "Saldo de Reserva" in res_pt.text
+    assert "Recebido no Mês" in res_pt.text
+    assert "Saldo Projetado" in res_pt.text
     assert "Próximos Vencimentos" in res_pt.text
     assert "Todos os Compromissos" in res_pt.text
     assert "Privio © 2026 — Todos os direitos reservados." in res_pt.text
@@ -168,8 +168,8 @@ def test_i18n_dashboard_and_partials(viewer_client: TestClient) -> None:
     # 2. English
     res_en = viewer_client.get("/?lang=en")
     assert res_en.status_code == 200
-    assert "Suggested Monthly Budget" in res_en.text
-    assert "Reserve Balance" in res_en.text
+    assert "Received This Month" in res_en.text
+    assert "Projected Balance" in res_en.text
     assert "Upcoming Due Dates" in res_en.text
     assert "All Commitments" in res_en.text
     assert "Privio © 2026 — All rights reserved." in res_en.text
@@ -177,8 +177,8 @@ def test_i18n_dashboard_and_partials(viewer_client: TestClient) -> None:
     # 3. Italian
     res_it = viewer_client.get("/?lang=it")
     assert res_it.status_code == 200
-    assert "Totale Mensile Suggerito" in res_it.text
-    assert "Saldo di Riserva" in res_it.text
+    assert "Ricevuto nel Mese" in res_it.text
+    assert "Saldo Previsto" in res_it.text
     assert "Prossime Scadenze" in res_it.text
     assert "Tutti gli Impegni" in res_it.text
     assert "Privio © 2026 — Tutti i diritti riservati." in res_it.text
@@ -197,4 +197,4 @@ def test_i18n_dashboard_and_partials(viewer_client: TestClient) -> None:
     # 5. Unsupported language falls back to Portuguese
     res_fallback = viewer_client.get("/?lang=fr")
     assert res_fallback.status_code == 200
-    assert "Total Sugerido do Mês" in res_fallback.text
+    assert "Recebido no Mês" in res_fallback.text

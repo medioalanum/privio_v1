@@ -1,37 +1,49 @@
 <div class="grid-cards" id="stats-cards">
-    <!-- Card 1: Total Sugerido do Mês -->
+    <!-- Current-month cash flow -->
     <article class="metric-card">
         <header>
-            <small>📊 <strong>{{ t('suggested_monthly_title') }}</strong></small>
+            <small>📥 <strong>{{ t('cash_received_title') }}</strong></small>
         </header>
-        <div class="metric-value">
-            R$ {{ "{:,.2f}".format(suggested.total_suggested_monthly) }}
-        </div>
-        <div class="metric-sub">
-            <span>{{ t('monthly_label') }}: R$ {{ "{:,.2f}".format(suggested.monthly_sum) }}</span> • 
-            <span>{{ t('semiannual_label') }}: R$ {{ "{:,.2f}".format(suggested.semiannual_contribution) }}{{ t('per_month') }}</span> • 
-            <span>{{ t('annual_label') }}: R$ {{ "{:,.2f}".format(suggested.annual_contribution) }}{{ t('per_month') }}</span>
-        </div>
-        <footer style="margin-top: 0.5rem;">
-            <small style="color: var(--pico-muted-color);">{{ suggested.active_commitments_count }} {{ t('active_commitments_count') }}</small>
-        </footer>
+        <div class="metric-value">R$ {{ "{:,.2f}".format(cash_flow.received) }}</div>
+        <div class="metric-sub">{{ t('deposits_in_month', count=cash_flow.deposits_count) }}</div>
     </article>
 
-    <!-- Card 2: Saldo de Reserva -->
     <article class="metric-card">
         <header>
-            <small>🏦 <strong>{{ t('reserve_balance_title') }}</strong></small>
+            <small>🧾 <strong>{{ t('cash_bills_title') }}</strong></small>
         </header>
-        <div class="metric-value" style="color: {% if reserve.reserve_balance >= 0 %}#10b981{% else %}#ef4444{% endif %};">
-            R$ {{ "{:,.2f}".format(reserve.reserve_balance) }}
-        </div>
+        <div class="metric-value">R$ {{ "{:,.2f}".format(cash_flow.bills_total) }}</div>
+        <div class="metric-sub">{{ t('bills_in_month', count=cash_flow.bills_count) }}</div>
+    </article>
+
+    <article class="metric-card">
+        <header><small>✅ <strong>{{ t('cash_paid_title') }}</strong></small></header>
+        <div class="metric-value" style="color: #10b981;">R$ {{ "{:,.2f}".format(cash_flow.paid) }}</div>
+        <div class="metric-sub">{{ t('paid_in_month', count=cash_flow.paid_count) }}</div>
+    </article>
+
+    <article class="metric-card">
+        <header><small>⏳ <strong>{{ t('cash_pending_title') }}</strong></small></header>
+        <div class="metric-value" style="color: {% if cash_flow.pending > 0 %}#f59e0b{% else %}#10b981{% endif %};">R$ {{ "{:,.2f}".format(cash_flow.pending) }}</div>
+        <div class="metric-sub">{{ t('pending_in_month', count=cash_flow.pending_count) }}</div>
+    </article>
+
+    <article class="metric-card">
+        <header><small>💵 <strong>{{ t('cash_available_title') }}</strong></small></header>
+        <div class="metric-value" style="color: {% if cash_flow.available_now >= 0 %}#10b981{% else %}#ef4444{% endif %};">R$ {{ "{:,.2f}".format(cash_flow.available_now) }}</div>
+        <div class="metric-sub">{{ t('cash_available_help') }}</div>
+    </article>
+
+    <article class="metric-card">
+        <header><small>📉 <strong>{{ t('cash_projected_title') }}</strong></small></header>
+        <div class="metric-value" style="color: {% if cash_flow.projected_balance >= 0 %}#10b981{% else %}#ef4444{% endif %};">R$ {{ "{:,.2f}".format(cash_flow.projected_balance) }}</div>
         <div class="metric-sub">
-            <span>{{ t('total_deposits_label') }}: R$ {{ "{:,.2f}".format(reserve.total_deposits) }}</span> • 
-            <span>{{ t('total_paid_label') }}: R$ {{ "{:,.2f}".format(reserve.total_paid_commitments) }}</span>
+            {% if cash_flow.projected_balance < 0 %}
+                {{ t('cash_shortfall', amount="{:,.2f}".format(-cash_flow.projected_balance)) }}
+            {% else %}
+                {{ t('cash_projected_help') }}
+            {% endif %}
         </div>
-        <footer style="margin-top: 0.5rem;">
-            <small style="color: var(--pico-muted-color);">{{ t('reserve_stats', deposits=reserve.deposits_count, paid=reserve.paid_commitments_count) }}</small>
-        </footer>
     </article>
 
     <!-- Card 3: Ações Rápidas -->
