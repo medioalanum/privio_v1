@@ -18,7 +18,7 @@ from fastapi import (
 )
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from app.auth import (
@@ -392,9 +392,10 @@ def toggle_commitment_status(
     commitment_id: int,
     db: Annotated[Session, Depends(get_db)],
     user: Annotated[AuthenticatedUser, Depends(require_editor_web)],
+    occurrence_date: Annotated[date | None, Query()] = None,
     lang: Annotated[str | None, Query()] = None,
 ) -> Response:
-    """Toggle commitment status between pending and paid."""
+    """Toggle a displayed occurrence, or the base commitment when none is given."""
     lang_code = normalize_lang(lang)
     commitment = db.get(Commitment, commitment_id)
     if commitment is None:
@@ -402,11 +403,52 @@ def toggle_commitment_status(
             status_code=status.HTTP_404_NOT_FOUND, detail="Commitment not found"
         )
 
-    if commitment.status == StatusEnum.PAID:
-        commitment.status = StatusEnum.PENDING
+    target_status: StatusEnum
+    if occurrence_date is not None:
+        displayed = next(
+            (
+                item
+                for item in resolve_upcoming_occurrences(
+                    [commitment], from_date=occurrence_date, days=0
+                )
+                if item.occurrence_date == occurrence_date
+            ),
+            None,
+        )
+        current_status = displayed.status if displayed else commitment.status
+        target_status = (
+            StatusEnum.PENDING if current_status == StatusEnum.PAID else StatusEnum.PAID
+        )
+        adjustment = db.scalar(
+            select(CommitmentAdjustment).where(
+                CommitmentAdjustment.commitment_id == commitment_id,
+                CommitmentAdjustment.scope == "single",
+                or_(
+                    CommitmentAdjustment.effective_date == occurrence_date,
+                    CommitmentAdjustment.adjusted_date == occurrence_date,
+                ),
+            )
+        )
+        if adjustment is None:
+            adjustment = CommitmentAdjustment(
+                commitment_id=commitment_id,
+                effective_date=occurrence_date,
+                scope="single",
+            )
+            db.add(adjustment)
+        adjustment.status = target_status
+        adjustment.is_deleted = False
+    else:
+        target_status = (
+            StatusEnum.PENDING
+            if commitment.status == StatusEnum.PAID
+            else StatusEnum.PAID
+        )
+        commitment.status = target_status
+
+    if target_status == StatusEnum.PENDING:
         msg = t("msg_status_reopened", lang=lang_code, desc=commitment.description)
     else:
-        commitment.status = StatusEnum.PAID
         msg = t("msg_status_paid", lang=lang_code, desc=commitment.description)
 
     db.commit()
