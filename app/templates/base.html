@@ -78,9 +78,23 @@
             align-items: center;
         }
         .action-btns button, .action-btns a {
-            padding: 0.3rem 0.6rem;
-            font-size: 0.8rem;
-            margin-bottom: 0;
+            align-items: center;
+            display: inline-flex;
+            height: 2.35rem;
+            justify-content: center;
+            margin: 0;
+            padding: 0;
+            width: 2.35rem;
+        }
+        .action-btns svg {
+            height: 1.05rem;
+            pointer-events: none;
+            stroke: currentColor;
+            width: 1.05rem;
+        }
+        .action-btns .action-delete {
+            border-color: #ef4444;
+            color: #ef4444;
         }
         .lang-link {
             font-size: 0.85rem;

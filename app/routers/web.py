@@ -131,6 +131,13 @@ def _get_dashboard_context(
     )
     for occurrence in occurrences:
         occurrence.days_until = (occurrence.occurrence_date - today).days
+    current_month_occurrences = {
+        occurrence.original_commitment_id: occurrence
+        for occurrence in occurrences
+        if occurrence.recurrence == RecurrenceEnum.MONTHLY
+        and occurrence.occurrence_date.year == today.year
+        and occurrence.occurrence_date.month == today.month
+    }
 
     return {
         "request": request,
@@ -143,6 +150,7 @@ def _get_dashboard_context(
         "suggested": suggested,
         "reserve": reserve,
         "occurrences": occurrences,
+        "current_month_occurrences": current_month_occurrences,
         "commitments": commitments,
         "toast_message": toast_message,
     }
