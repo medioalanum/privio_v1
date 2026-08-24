@@ -1,0 +1,90 @@
+<section id="upcoming-section" class="metric-card" style="margin-bottom: 2rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 1rem; gap: 0.5rem;">
+        <div>
+            <h3 style="margin-bottom: 0;">{{ t('upcoming_title') }}</h3>
+            <small style="color: var(--pico-muted-color);">{{ t('upcoming_subtitle') }}</small>
+        </div>
+        
+        <div role="group">
+            <button 
+                class="{% if days == 30 %}primary{% else %}secondary outline{% endif %}" 
+                hx-get="/ui/upcoming?days=30&lang={{ lang }}" 
+                hx-target="#upcoming-section" 
+                hx-swap="outerHTML">
+                {{ t('days_30') }}
+            </button>
+            <button 
+                class="{% if days == 60 %}primary{% else %}secondary outline{% endif %}" 
+                hx-get="/ui/upcoming?days=60&lang={{ lang }}" 
+                hx-target="#upcoming-section" 
+                hx-swap="outerHTML">
+                {{ t('days_60') }}
+            </button>
+            <button 
+                class="{% if days == 90 %}primary{% else %}secondary outline{% endif %}" 
+                hx-get="/ui/upcoming?days=90&lang={{ lang }}" 
+                hx-target="#upcoming-section" 
+                hx-swap="outerHTML">
+                {{ t('days_90') }}
+            </button>
+        </div>
+    </div>
+
+    <div class="overflow-auto">
+        <table class="striped">
+            <thead>
+                <tr>
+                    <th>{{ t('th_due_date') }}</th>
+                    <th>{{ t('th_time_until') }}</th>
+                    <th>{{ t('th_description') }}</th>
+                    <th>{{ t('th_category') }}</th>
+                    <th>{{ t('th_recurrence') }}</th>
+                    <th>{{ t('th_amount') }}</th>
+                    <th>{{ t('th_status') }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if occurrences %}
+                    {% for item in occurrences %}
+                        <tr>
+                            <td><strong>{{ item.occurrence_date.strftime('%d/%m/%Y') }}</strong></td>
+                            <td>
+                                {% if item.days_until == 0 %}
+                                    <span style="color: #ef4444; font-weight: bold;">{{ t('today_badge') }}</span>
+                                {% elif item.days_until == 1 %}
+                                    <span style="color: #f59e0b; font-weight: bold;">{{ t('tomorrow_badge') }}</span>
+                                {% else %}
+                                    {{ t('days_badge', days=item.days_until) }}
+                                {% endif %}
+                            </td>
+                            <td>
+                                {{ item.description }}
+                                {% if item.is_estimate %}
+                                    <span class="badge badge-estimate" title="{{ t('estimate_badge') }}">{{ t('estimate_badge') }}</span>
+                                {% endif %}
+                            </td>
+                            <td><small>{{ item.category }}</small></td>
+                            <td>
+                                <span class="badge badge-recurrence">
+                                    {{ t('rec_' + item.recurrence.value) }}
+                                </span>
+                            </td>
+                            <td><strong>R$ {{ "{:,.2f}".format(item.amount) }}</strong></td>
+                            <td>
+                                <span class="badge {% if item.status.value == 'paid' %}badge-paid{% else %}badge-pending{% endif %}">
+                                    {{ t('status_' + item.status.value) }}
+                                </span>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="7" style="text-align: center; color: var(--pico-muted-color); padding: 2rem;">
+                            {{ t('no_upcoming', days=days) }}
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</section>

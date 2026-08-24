@@ -1,0 +1,67 @@
+<div class="grid-cards" id="stats-cards">
+    <!-- Card 1: Total Sugerido do Mês -->
+    <article class="metric-card">
+        <header>
+            <small>📊 <strong>{{ t('suggested_monthly_title') }}</strong></small>
+        </header>
+        <div class="metric-value">
+            R$ {{ "{:,.2f}".format(suggested.total_suggested_monthly) }}
+        </div>
+        <div class="metric-sub">
+            <span>{{ t('monthly_label') }}: R$ {{ "{:,.2f}".format(suggested.monthly_sum) }}</span> • 
+            <span>{{ t('semiannual_label') }}: R$ {{ "{:,.2f}".format(suggested.semiannual_contribution) }}{{ t('per_month') }}</span> • 
+            <span>{{ t('annual_label') }}: R$ {{ "{:,.2f}".format(suggested.annual_contribution) }}{{ t('per_month') }}</span>
+        </div>
+        <footer style="margin-top: 0.5rem;">
+            <small style="color: var(--pico-muted-color);">{{ suggested.active_commitments_count }} {{ t('active_commitments_count') }}</small>
+        </footer>
+    </article>
+
+    <!-- Card 2: Saldo de Reserva -->
+    <article class="metric-card">
+        <header>
+            <small>🏦 <strong>{{ t('reserve_balance_title') }}</strong></small>
+        </header>
+        <div class="metric-value" style="color: {% if reserve.reserve_balance >= 0 %}#10b981{% else %}#ef4444{% endif %};">
+            R$ {{ "{:,.2f}".format(reserve.reserve_balance) }}
+        </div>
+        <div class="metric-sub">
+            <span>{{ t('total_deposits_label') }}: R$ {{ "{:,.2f}".format(reserve.total_deposits) }}</span> • 
+            <span>{{ t('total_paid_label') }}: R$ {{ "{:,.2f}".format(reserve.total_paid_commitments) }}</span>
+        </div>
+        <footer style="margin-top: 0.5rem;">
+            <small style="color: var(--pico-muted-color);">{{ t('reserve_stats', deposits=reserve.deposits_count, paid=reserve.paid_commitments_count) }}</small>
+        </footer>
+    </article>
+
+    <!-- Card 3: Ações Rápidas -->
+    <article class="metric-card">
+        <header>
+            <small>⚡ <strong>{{ t('quick_actions_title') }}</strong></small>
+        </header>
+        <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.5rem;">
+            {% if user.role.value == 'editor' %}
+                <button 
+                    class="primary"
+                    hx-get="/ui/commitments/new?lang={{ lang }}" 
+                    hx-target="#modal-container" 
+                    hx-swap="innerHTML"
+                    style="margin-bottom: 0;">
+                    {{ t('new_commitment_btn') }}
+                </button>
+                <button 
+                    class="secondary outline"
+                    hx-get="/ui/deposits/new?lang={{ lang }}" 
+                    hx-target="#modal-container" 
+                    hx-swap="innerHTML"
+                    style="margin-bottom: 0;">
+                    {{ t('new_deposit_btn') }}
+                </button>
+            {% else %}
+                <div style="color: var(--pico-muted-color); font-size: 0.85rem; padding: 0.5rem 0;">
+                    <em>Modo visualização ativo (Viewer). Apenas leitura.</em>
+                </div>
+            {% endif %}
+        </div>
+    </article>
+</div>

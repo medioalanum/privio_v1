@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual Environment & uv
+.venv/
+.uv-cache/
+uv.cache/
+
+# Environment Variables
+.env
+!.env.example
+
+# IDE & Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Testing & Quality
+.pytest_cache/
+.coverage
+htmlcov/
+.ruff_cache/
+.ty_cache/
