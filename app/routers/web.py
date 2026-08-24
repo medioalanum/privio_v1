@@ -16,12 +16,20 @@ from fastapi import (
     Response,
     status,
 )
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.auth import AuthenticatedUser, require_editor, require_viewer
+from app.auth import (
+    SESSION_COOKIE,
+    AuthenticatedUser,
+    authenticate_credentials,
+    create_session_token,
+    require_editor_web,
+    require_viewer_web,
+)
+from app.config import settings
 from app.database import get_db
 from app.i18n import get_translations, normalize_lang, t
 from app.models.commitment import Commitment, RecurrenceEnum, StatusEnum
@@ -36,6 +44,63 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
 router = APIRouter(include_in_schema=False)
+
+
+@router.get("/login", response_class=HTMLResponse)
+def login_page(request: Request, next_path: str = "/") -> Response:
+    """Render the branded browser login page."""
+    return templates.TemplateResponse(
+        request=request,
+        name="login.html",
+        context={"request": request, "error": None, "next_path": next_path},
+    )
+
+
+@router.post("/login", response_class=HTMLResponse)
+def login_action(
+    request: Request,
+    role: Annotated[str, Form()],
+    password: Annotated[str, Form()],
+    next_path: Annotated[str, Form()] = "/",
+) -> Response:
+    """Validate credentials and establish a secure browser session."""
+    username = settings.editor_user if role == "editor" else settings.viewer_user
+    user = authenticate_credentials(username, password)
+    safe_next = (
+        next_path
+        if next_path.startswith("/") and not next_path.startswith("//")
+        else "/"
+    )
+    if user is None:
+        return templates.TemplateResponse(
+            request=request,
+            name="login.html",
+            context={
+                "request": request,
+                "error": "Usuário ou senha incorretos.",
+                "next_path": safe_next,
+            },
+            status_code=status.HTTP_401_UNAUTHORIZED,
+        )
+
+    response = RedirectResponse(url=safe_next, status_code=status.HTTP_303_SEE_OTHER)
+    response.set_cookie(
+        SESSION_COOKIE,
+        create_session_token(user),
+        max_age=60 * 60 * 12,
+        httponly=True,
+        secure=settings.environment == "production",
+        samesite="lax",
+    )
+    return response
+
+
+@router.post("/logout")
+def logout_action() -> Response:
+    """End the current browser session."""
+    response = RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
+    response.delete_cookie(SESSION_COOKIE)
+    return response
 
 
 def _get_dashboard_context(
@@ -77,7 +142,7 @@ def _get_dashboard_context(
 def index_page(
     request: Request,
     db: Annotated[Session, Depends(get_db)],
-    user: Annotated[AuthenticatedUser, Depends(require_viewer)],
+    user: Annotated[AuthenticatedUser, Depends(require_viewer_web)],
     lang: Annotated[str | None, Query(description="Language code (pt/en/it)")] = None,
 ) -> Response:
     """Render the main dashboard server-rendered page."""
@@ -94,7 +159,7 @@ def index_page(
 def get_upcoming_partial(
     request: Request,
     db: Annotated[Session, Depends(get_db)],
-    user: Annotated[AuthenticatedUser, Depends(require_viewer)],
+    user: Annotated[AuthenticatedUser, Depends(require_viewer_web)],
     days: Annotated[int, Query(ge=1, le=365)] = 30,
     lang: Annotated[str | None, Query()] = None,
 ) -> Response:
@@ -122,7 +187,7 @@ def get_upcoming_partial(
 @router.get("/ui/commitments/new", response_class=HTMLResponse)
 def new_commitment_form(
     request: Request,
-    user: Annotated[AuthenticatedUser, Depends(require_viewer)],
+    user: Annotated[AuthenticatedUser, Depends(require_viewer_web)],
     lang: Annotated[str | None, Query()] = None,
 ) -> Response:
     """Render the modal form for creating a new commitment."""
@@ -146,7 +211,7 @@ def edit_commitment_form(
     request: Request,
     commitment_id: int,
     db: Annotated[Session, Depends(get_db)],
-    user: Annotated[AuthenticatedUser, Depends(require_viewer)],
+    user: Annotated[AuthenticatedUser, Depends(require_viewer_web)],
     lang: Annotated[str | None, Query()] = None,
 ) -> Response:
     """Render the modal form for editing an existing commitment."""
@@ -175,7 +240,7 @@ def edit_commitment_form(
 def create_commitment_form_action(
     request: Request,
     db: Annotated[Session, Depends(get_db)],
-    user: Annotated[AuthenticatedUser, Depends(require_editor)],
+    user: Annotated[AuthenticatedUser, Depends(require_editor_web)],
     description: Annotated[str, Form()],
     amount: Annotated[Decimal, Form()],
     due_date: Annotated[date, Form()],
@@ -220,7 +285,7 @@ def update_commitment_form_action(
     request: Request,
     commitment_id: int,
     db: Annotated[Session, Depends(get_db)],
-    user: Annotated[AuthenticatedUser, Depends(require_editor)],
+    user: Annotated[AuthenticatedUser, Depends(require_editor_web)],
     description: Annotated[str, Form()],
     amount: Annotated[Decimal, Form()],
     due_date: Annotated[date, Form()],
@@ -269,7 +334,7 @@ def toggle_commitment_status(
     request: Request,
     commitment_id: int,
     db: Annotated[Session, Depends(get_db)],
-    user: Annotated[AuthenticatedUser, Depends(require_editor)],
+    user: Annotated[AuthenticatedUser, Depends(require_editor_web)],
     lang: Annotated[str | None, Query()] = None,
 ) -> Response:
     """Toggle commitment status between pending and paid."""
@@ -304,7 +369,7 @@ def delete_commitment_action(
     request: Request,
     commitment_id: int,
     db: Annotated[Session, Depends(get_db)],
-    user: Annotated[AuthenticatedUser, Depends(require_editor)],
+    user: Annotated[AuthenticatedUser, Depends(require_editor_web)],
     lang: Annotated[str | None, Query()] = None,
 ) -> Response:
     """Delete commitment via HTMX and return updated dashboard partial."""
@@ -338,7 +403,7 @@ def delete_commitment_action(
 @router.get("/ui/deposits/new", response_class=HTMLResponse)
 def new_deposit_form(
     request: Request,
-    user: Annotated[AuthenticatedUser, Depends(require_viewer)],
+    user: Annotated[AuthenticatedUser, Depends(require_viewer_web)],
     lang: Annotated[str | None, Query()] = None,
 ) -> Response:
     """Render the modal form for registering a new deposit."""
@@ -360,7 +425,7 @@ def new_deposit_form(
 def create_deposit_form_action(
     request: Request,
     db: Annotated[Session, Depends(get_db)],
-    user: Annotated[AuthenticatedUser, Depends(require_editor)],
+    user: Annotated[AuthenticatedUser, Depends(require_editor_web)],
     amount: Annotated[Decimal, Form()],
     date_val: Annotated[date, Form(alias="date")],
     note: Annotated[str | None, Form()] = None,

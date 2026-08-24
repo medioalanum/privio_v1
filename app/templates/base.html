@@ -116,6 +116,11 @@
                 </li>
                 <li><a href="/?lang={{ lang }}" class="contrast">{{ t('dashboard') }}</a></li>
                 <li><a href="/docs" target="_blank" class="secondary">{{ t('swagger_api') }}</a></li>
+                <li>
+                    <form action="/logout" method="post" style="margin: 0;">
+                        <button type="submit" class="outline secondary" style="margin: 0; padding: .45rem .8rem;">Sair</button>
+                    </form>
+                </li>
             </ul>
         </nav>
     </header>

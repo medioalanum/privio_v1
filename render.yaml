@@ -26,3 +26,5 @@ services:
         value: viewer
       - key: VIEWER_PASS
         generateValue: true  # Render generates a secure random password automatically
+      - key: SESSION_SECRET
+        generateValue: true  # Signs secure browser session cookies
