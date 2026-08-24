@@ -1,8 +1,14 @@
 """Automated tests for Deposit CRUD and /reserve-balance calculation."""
 
+from datetime import date
 from decimal import Decimal
 
 from fastapi.testclient import TestClient
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
+from app.models.commitment import Commitment
+from app.services.reserve import calculate_monthly_cash_flow
 
 
 def test_create_deposit(client: TestClient) -> None:
@@ -187,3 +193,80 @@ def test_reserve_balance_calculation(client: TestClient) -> None:
     assert Decimal(data["reserve_balance"]) == Decimal("1000.00")
     assert data["deposits_count"] == 2
     assert data["paid_commitments_count"] == 2
+
+
+def test_monthly_cash_flow_uses_actual_occurrences(
+    client: TestClient, db_session: Session
+) -> None:
+    """Cash flow must use actual monthly due dates, overrides, and deposits."""
+    client.post("/deposits", json={"amount": "2400.00", "date": "2026-08-03"})
+    client.post("/deposits", json={"amount": "999.00", "date": "2026-09-01"})
+
+    monthly = client.post(
+        "/commitments",
+        json={
+            "description": "Monthly school",
+            "amount": "400.00",
+            "due_date": "2026-08-15",
+            "recurrence": "monthly",
+            "category": "Education",
+        },
+    ).json()
+    client.post(
+        f"/ui/commitments/{monthly['id']}/edit",
+        data={
+            "description": "Monthly school",
+            "amount": "440.00",
+            "due_date": "2026-08-24",
+            "category": "Education",
+            "recurrence": "monthly",
+            "status": "pending",
+            "scope": "single",
+            "occurrence_date": "2026-08-15",
+        },
+    )
+    client.post(
+        f"/ui/commitments/{monthly['id']}/toggle-paid",
+        params={"occurrence_date": "2026-08-24"},
+    )
+
+    for description, amount, due_date, recurrence in (
+        ("Weekly", "100.00", "2026-08-01", "weekly"),
+        ("Semiannual", "600.00", "2026-08-10", "semiannual"),
+        ("Annual", "1200.00", "2026-08-20", "annual"),
+    ):
+        client.post(
+            "/commitments",
+            json={
+                "description": description,
+                "amount": amount,
+                "due_date": due_date,
+                "recurrence": recurrence,
+                "category": "Test",
+            },
+        )
+
+    removed = client.post(
+        "/commitments",
+        json={
+            "description": "Removed one-off",
+            "amount": "50.00",
+            "due_date": "2026-08-12",
+            "category": "Test",
+        },
+    ).json()
+    client.delete(f"/ui/commitments/{removed['id']}/occurrences/2026-08-12")
+
+    commitments = db_session.scalars(select(Commitment)).all()
+    flow = calculate_monthly_cash_flow(db_session, commitments, date(2026, 8, 1))
+
+    assert flow.received == Decimal("2400.00")
+    assert flow.bills_total == Decimal("2740.00")
+    assert flow.paid == Decimal("440.00")
+    assert flow.pending == Decimal("2300.00")
+    assert flow.available_now == Decimal("1960.00")
+    assert flow.projected_balance == Decimal("-340.00")
+    assert flow.deposits_count == 1
+    assert flow.bills_count == 8
+    assert flow.paid_count == 1
+    assert flow.pending_count == 7

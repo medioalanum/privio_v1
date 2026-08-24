@@ -1,14 +1,64 @@
-"""Reserve balance service calculation."""
+"""Reserve balance and monthly cash-flow calculations."""
 
+from collections.abc import Sequence
+from datetime import date
 from decimal import Decimal
 
+from dateutil.relativedelta import relativedelta
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.models.commitment import Commitment, StatusEnum
 from app.models.deposit import Deposit
-from app.schemas.deposit import ReserveBalanceResponse
-from app.services.recurrence import _quantize_currency
+from app.schemas.deposit import MonthlyCashFlowResponse, ReserveBalanceResponse
+from app.services.recurrence import _quantize_currency, resolve_upcoming_occurrences
+
+
+def calculate_monthly_cash_flow(
+    db: Session,
+    commitments: Sequence[Commitment],
+    month: date,
+) -> MonthlyCashFlowResponse:
+    """Calculate actual scheduled, paid, and available amounts for one month."""
+    month_start = month.replace(day=1)
+    month_end = month_start + relativedelta(months=1, days=-1)
+    occurrences = resolve_upcoming_occurrences(
+        commitments,
+        from_date=month_start,
+        days=(month_end - month_start).days,
+    )
+
+    deposit_values = db.scalars(
+        select(Deposit.amount).where(
+            Deposit.date >= month_start,
+            Deposit.date <= month_end,
+        )
+    ).all()
+    received = _quantize_currency(sum(deposit_values, start=Decimal("0.00")))
+    bills_total = _quantize_currency(
+        sum((item.amount for item in occurrences), start=Decimal("0.00"))
+    )
+    paid_occurrences = [item for item in occurrences if item.status == StatusEnum.PAID]
+    paid = _quantize_currency(
+        sum((item.amount for item in paid_occurrences), start=Decimal("0.00"))
+    )
+    pending = _quantize_currency(bills_total - paid)
+    available_now = _quantize_currency(received - paid)
+    projected_balance = _quantize_currency(received - bills_total)
+
+    return MonthlyCashFlowResponse(
+        month=month_start,
+        received=received,
+        bills_total=bills_total,
+        paid=paid,
+        pending=pending,
+        available_now=available_now,
+        projected_balance=projected_balance,
+        deposits_count=len(deposit_values),
+        bills_count=len(occurrences),
+        paid_count=len(paid_occurrences),
+        pending_count=len(occurrences) - len(paid_occurrences),
+    )
 
 
 def calculate_reserve_balance(db: Session) -> ReserveBalanceResponse:

@@ -30,8 +30,8 @@ def test_dashboard_page_render(client: TestClient) -> None:
     assert response.status_code == 200
     assert "text/html" in response.headers["content-type"]
     assert "Privio" in response.text
-    assert "Total Sugerido do Mês" in response.text
-    assert "Saldo de Reserva" in response.text
+    assert "Recebido no Mês" in response.text
+    assert "Saldo Projetado" in response.text
     assert "Internet Fiber" in response.text
     assert (
         "R$ 120.00" in response.text
