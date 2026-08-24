@@ -57,6 +57,8 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "btn_edit": "✏️ Editar",
         "btn_delete": "🗑️",
         "btn_delete_series": "Excluir toda a série",
+        "btn_delete_occurrence": "Excluir somente esta ocorrência",
+        "confirm_delete_occurrence": "Excluir somente esta ocorrência?",
         "confirm_delete_commitment": "Tem certeza que deseja excluir este compromisso?",
         "no_commitments": "Nenhum compromisso cadastrado ainda. Clique em '➕ Novo Compromisso' para adicionar.",
         # Modal & Form
@@ -149,6 +151,8 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "btn_edit": "✏️ Edit",
         "btn_delete": "🗑️",
         "btn_delete_series": "Delete entire series",
+        "btn_delete_occurrence": "Delete only this occurrence",
+        "confirm_delete_occurrence": "Delete only this occurrence?",
         "confirm_delete_commitment": "Are you sure you want to delete this commitment?",
         "no_commitments": "No commitments registered yet. Click '➕ New Commitment' to add one.",
         # Modal & Form
@@ -241,6 +245,8 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "btn_edit": "✏️ Modifica",
         "btn_delete": "🗑️",
         "btn_delete_series": "Elimina l'intera serie",
+        "btn_delete_occurrence": "Elimina solo questa occorrenza",
+        "confirm_delete_occurrence": "Eliminare solo questa occorrenza?",
         "confirm_delete_commitment": "Sei sicuro di voler eliminare questo impegno?",
         "no_commitments": "Nessun impegno registrato. Clicca su '➕ Nuovo Impegno' per aggiungere.",
         # Modal & Form
