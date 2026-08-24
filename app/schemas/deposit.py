@@ -78,3 +78,14 @@ class MonthlyCashFlowResponse(BaseModel):
     bills_count: int
     paid_count: int
     pending_count: int
+
+
+class MonthlyForecastResponse(BaseModel):
+    """One row in the 12-month cash requirement forecast."""
+
+    month: datetime.date
+    total: Decimal
+    paid: Decimal
+    pending: Decimal
+    status: str
+    notable_items: list[str]

@@ -89,6 +89,59 @@ def test_month_navigation_filters_and_survives_actions(client: TestClient) -> No
     assert "September changed" in edited.text
 
 
+def test_payment_details_preserve_due_date_and_reopen(client: TestClient) -> None:
+    """Actual payment data must not overwrite the scheduled due date."""
+    client.post("/deposits", json={"amount": "500.00", "date": "2026-08-01"})
+    commitment = client.post(
+        "/commitments",
+        json={
+            "description": "August bill",
+            "amount": "400.00",
+            "due_date": "2026-08-15",
+            "recurrence": "monthly",
+            "category": "Test",
+        },
+    ).json()
+
+    form = client.get(
+        "/ui/payments/new",
+        params={
+            "commitment_id": commitment["id"],
+            "occurrence_date": "2026-08-15",
+            "amount": "400.00",
+            "month": "2026-08",
+        },
+    )
+    assert form.status_code == 200
+    assert "Registrar Pagamento" in form.text
+    assert 'value="2026-08-15" disabled' in form.text
+
+    paid = client.post(
+        "/ui/payments?month=2026-08",
+        data={
+            "commitment_id": commitment["id"],
+            "occurrence_date": "2026-08-15",
+            "payment_date": "2026-08-24",
+            "planned_amount": "400.00",
+            "paid_amount": "390.00",
+            "note": "Discount",
+        },
+    )
+    assert paid.status_code == 200
+    assert "Pago em 24/08/2026" in paid.text
+    assert "Valor pago: R$ 390.00" in paid.text
+    assert "R$ 110.00" in paid.text
+    base = client.get(f"/commitments/{commitment['id']}").json()
+    assert base["due_date"] == "2026-08-15"
+
+    reopened = client.delete(
+        f"/ui/payments/{commitment['id']}/2026-08-15?month=2026-08"
+    )
+    assert reopened.status_code == 200
+    assert "Vencimento reaberto como pendente" in reopened.text
+    assert "R$ 400.00" in reopened.text
+
+
 def test_ui_upcoming_partial(client: TestClient) -> None:
     """Test HTMX upcoming occurrences partial for 30/60/90 days."""
     client.post(

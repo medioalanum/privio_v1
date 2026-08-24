@@ -8,7 +8,10 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models.commitment import Commitment
-from app.services.reserve import calculate_monthly_cash_flow
+from app.services.reserve import (
+    calculate_cash_flow_forecast,
+    calculate_monthly_cash_flow,
+)
 
 
 def test_create_deposit(client: TestClient) -> None:
@@ -270,3 +273,36 @@ def test_monthly_cash_flow_uses_actual_occurrences(
     assert flow.bills_count == 8
     assert flow.paid_count == 1
     assert flow.pending_count == 7
+
+
+def test_twelve_month_forecast_uses_full_due_amounts(
+    client: TestClient, db_session: Session
+) -> None:
+    """Annual and semiannual amounts belong in their actual due month."""
+    for description, amount, due_date, recurrence in (
+        ("Monthly", "100.00", "2026-08-05", "monthly"),
+        ("Annual tax", "1200.00", "2026-10-10", "annual"),
+        ("Semiannual insurance", "600.00", "2026-11-10", "semiannual"),
+    ):
+        client.post(
+            "/commitments",
+            json={
+                "description": description,
+                "amount": amount,
+                "due_date": due_date,
+                "recurrence": recurrence,
+                "category": "Test",
+            },
+        )
+    commitments = db_session.scalars(select(Commitment)).all()
+    rows = calculate_cash_flow_forecast(
+        db_session, commitments, date(2026, 8, 1), months=4
+    )
+    assert [row.total for row in rows] == [
+        Decimal("100.00"),
+        Decimal("100.00"),
+        Decimal("1300.00"),
+        Decimal("700.00"),
+    ]
+    assert rows[2].notable_items == ["Annual tax"]
+    assert rows[3].notable_items == ["Semiannual insurance"]

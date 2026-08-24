@@ -1,0 +1,19 @@
+<section class="metric-card">
+    <h3>{{ t('forecast_title') }}</h3>
+    <small>{{ t('forecast_subtitle') }}</small>
+    <div class="overflow-auto" style="margin-top: 1rem;">
+        <table class="striped">
+            <thead><tr><th>{{ t('forecast_month') }}</th><th>{{ t('forecast_total') }}</th><th>{{ t('th_status') }}</th><th>{{ t('forecast_details') }}</th></tr></thead>
+            <tbody>
+                {% for row in forecast %}
+                    <tr>
+                        <td><a href="/?lang={{ lang }}&month={{ row.month.strftime('%Y-%m') }}">{{ t('month_' + (row.month.month|string)) }} {{ row.month.year }}</a></td>
+                        <td><strong>R$ {{ "{:,.2f}".format(row.total) }}</strong></td>
+                        <td><span class="badge {% if row.status == 'paid' %}badge-paid{% elif row.status == 'partial' %}badge-estimate{% else %}badge-pending{% endif %}">{{ t('forecast_status_' + row.status) }}</span></td>
+                        <td>{% if row.notable_items %}{{ t('forecast_includes') }} {{ row.notable_items|join(', ') }}{% else %}—{% endif %}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>

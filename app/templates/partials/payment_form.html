@@ -1,0 +1,31 @@
+<div class="modal-backdrop" onclick="if(event.target === this) closeModal()">
+    <article class="modal-content">
+        <header style="display: flex; justify-content: space-between; align-items: center;">
+            <h4 style="margin-bottom: 0;">{{ t('payment_form_title') }}</h4>
+            <button type="button" aria-label="Close" class="contrast outline" onclick="closeModal()" style="border: none; font-size: 1.5rem; line-height: 1; padding: 0;">&times;</button>
+        </header>
+        <form hx-post="/ui/payments?lang={{ lang }}&month={{ selected_month_key }}" hx-target="#dashboard-content" hx-swap="innerHTML" hx-on::after-request="if(event.detail.successful) closeModal()" style="margin-top: 1rem;">
+            <input type="hidden" name="commitment_id" value="{{ commitment_id }}">
+            <input type="hidden" name="occurrence_date" value="{{ occurrence_date.isoformat() }}">
+            <input type="hidden" name="planned_amount" value="{{ planned_amount }}">
+            <label>{{ t('field_due_date') }}
+                <input type="date" value="{{ occurrence_date.isoformat() }}" disabled>
+            </label>
+            <div class="grid">
+                <label>{{ t('field_payment_date') }}
+                    <input type="date" name="payment_date" value="{{ today.isoformat() }}" required>
+                </label>
+                <label>{{ t('field_paid_amount') }}
+                    <input type="number" name="paid_amount" value="{{ planned_amount }}" min="0.01" step="0.01" required>
+                </label>
+            </div>
+            <label>{{ t('field_payment_note') }}
+                <input type="text" name="note" maxlength="255" placeholder="{{ t('field_payment_note_placeholder') }}">
+            </label>
+            <footer style="display: flex; justify-content: flex-end; gap: 0.5rem;">
+                <button type="button" class="secondary outline" onclick="closeModal()">{{ t('btn_cancel') }}</button>
+                <button type="submit">{{ t('btn_confirm_payment') }}</button>
+            </footer>
+        </form>
+    </article>
+</div>

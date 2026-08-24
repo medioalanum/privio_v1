@@ -40,8 +40,12 @@ from app.models.commitment import (
     StatusEnum,
 )
 from app.models.deposit import Deposit
+from app.models.payment import Payment
 from app.services.recurrence import resolve_upcoming_occurrences
-from app.services.reserve import calculate_monthly_cash_flow
+from app.services.reserve import (
+    calculate_cash_flow_forecast,
+    calculate_monthly_cash_flow,
+)
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
@@ -139,14 +143,29 @@ def _get_dashboard_context(
     occurrences = resolve_upcoming_occurrences(
         commitments, from_date=month_start, days=(month_end - month_start).days
     )
+    payments = db.scalars(
+        select(Payment).where(
+            Payment.occurrence_date >= month_start,
+            Payment.occurrence_date <= month_end,
+        )
+    ).all()
+    payments_by_commitment: dict[int, dict[str, Payment]] = {}
+    for payment in payments:
+        payments_by_commitment.setdefault(payment.commitment_id, {})[
+            payment.occurrence_date.isoformat()
+        ] = payment
     for occurrence in occurrences:
+        if occurrence.occurrence_date.isoformat() in payments_by_commitment.get(
+            occurrence.original_commitment_id, {}
+        ):
+            occurrence.status = StatusEnum.PAID
         occurrence.days_until = (occurrence.occurrence_date - today).days
     current_month_occurrences = {
         occurrence.original_commitment_id: occurrence
         for occurrence in occurrences
-        if occurrence.recurrence == RecurrenceEnum.MONTHLY
-        and occurrence.occurrence_date.year == today.year
-        and occurrence.occurrence_date.month == today.month
+        if occurrence.recurrence != RecurrenceEnum.WEEKLY
+        and occurrence.occurrence_date.year == selected_month.year
+        and occurrence.occurrence_date.month == selected_month.month
     }
 
     return {
@@ -166,6 +185,8 @@ def _get_dashboard_context(
         "t": lambda key, **kwargs: t(key, lang=lang_code, **kwargs),
         "translations": get_translations(lang_code),
         "cash_flow": cash_flow,
+        "forecast": calculate_cash_flow_forecast(db, commitments, month_start),
+        "payments_by_commitment": payments_by_commitment,
         "occurrences": occurrences,
         "current_month_occurrences": current_month_occurrences,
         "commitments": commitments,
@@ -485,6 +506,153 @@ def toggle_commitment_status(
         request=request,
         name="partials/dashboard_content.html",
         context=context,
+    )
+
+
+@router.get("/ui/payments/new", response_class=HTMLResponse)
+def new_payment_form(
+    request: Request,
+    commitment_id: int,
+    occurrence_date: date,
+    amount: Decimal,
+    user: Annotated[AuthenticatedUser, Depends(require_editor_web)],
+    lang: Annotated[str | None, Query()] = None,
+) -> Response:
+    """Open the form that records an actual payment for one due date."""
+    lang_code = normalize_lang(lang)
+    return templates.TemplateResponse(
+        request=request,
+        name="partials/payment_form.html",
+        context={
+            "request": request,
+            "user": user,
+            "commitment_id": commitment_id,
+            "occurrence_date": occurrence_date,
+            "planned_amount": amount,
+            "today": date.today(),
+            "lang": lang_code,
+            "selected_month_key": _selected_month(request).strftime("%Y-%m"),
+            "t": lambda key, **kwargs: t(key, lang=lang_code, **kwargs),
+        },
+    )
+
+
+@router.post("/ui/payments", response_class=HTMLResponse)
+def save_payment(
+    request: Request,
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[AuthenticatedUser, Depends(require_editor_web)],
+    commitment_id: Annotated[int, Form()],
+    occurrence_date: Annotated[date, Form()],
+    payment_date: Annotated[date, Form()],
+    planned_amount: Annotated[Decimal, Form()],
+    paid_amount: Annotated[Decimal, Form()],
+    note: Annotated[str | None, Form()] = None,
+    lang: Annotated[str | None, Query()] = None,
+) -> Response:
+    """Create or update payment details without changing the scheduled due date."""
+    commitment = db.get(Commitment, commitment_id)
+    if commitment is None:
+        raise HTTPException(status_code=404, detail="Commitment not found")
+    payment = db.scalar(
+        select(Payment).where(
+            Payment.commitment_id == commitment_id,
+            Payment.occurrence_date == occurrence_date,
+        )
+    )
+    if payment is None:
+        payment = Payment(
+            commitment_id=commitment_id,
+            occurrence_date=occurrence_date,
+            payment_date=payment_date,
+            planned_amount=planned_amount,
+            paid_amount=paid_amount,
+        )
+        db.add(payment)
+    payment.payment_date = payment_date
+    payment.planned_amount = planned_amount
+    payment.paid_amount = paid_amount
+    payment.note = note or None
+
+    adjustment = db.scalar(
+        select(CommitmentAdjustment).where(
+            CommitmentAdjustment.commitment_id == commitment_id,
+            CommitmentAdjustment.scope == "single",
+            or_(
+                CommitmentAdjustment.effective_date == occurrence_date,
+                CommitmentAdjustment.adjusted_date == occurrence_date,
+            ),
+        )
+    )
+    if adjustment is None:
+        adjustment = CommitmentAdjustment(
+            commitment_id=commitment_id,
+            effective_date=occurrence_date,
+            scope="single",
+        )
+        db.add(adjustment)
+    adjustment.status = StatusEnum.PAID
+    adjustment.is_deleted = False
+    if commitment.recurrence != RecurrenceEnum.NONE:
+        commitment.status = StatusEnum.PENDING
+    db.commit()
+
+    lang_code = normalize_lang(lang)
+    context = _get_dashboard_context(
+        request,
+        db,
+        user=user,
+        lang=lang_code,
+        toast_message=t("msg_payment_saved", lang=lang_code),
+    )
+    return templates.TemplateResponse(
+        request=request, name="partials/dashboard_content.html", context=context
+    )
+
+
+@router.delete(
+    "/ui/payments/{commitment_id}/{occurrence_date}", response_class=HTMLResponse
+)
+def reopen_payment(
+    request: Request,
+    commitment_id: int,
+    occurrence_date: date,
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[AuthenticatedUser, Depends(require_editor_web)],
+    lang: Annotated[str | None, Query()] = None,
+) -> Response:
+    """Remove actual payment data and reopen only the selected due date."""
+    payment = db.scalar(
+        select(Payment).where(
+            Payment.commitment_id == commitment_id,
+            Payment.occurrence_date == occurrence_date,
+        )
+    )
+    if payment is not None:
+        db.delete(payment)
+    adjustment = db.scalar(
+        select(CommitmentAdjustment).where(
+            CommitmentAdjustment.commitment_id == commitment_id,
+            CommitmentAdjustment.scope == "single",
+            or_(
+                CommitmentAdjustment.effective_date == occurrence_date,
+                CommitmentAdjustment.adjusted_date == occurrence_date,
+            ),
+        )
+    )
+    if adjustment is not None:
+        adjustment.status = StatusEnum.PENDING
+    db.commit()
+    lang_code = normalize_lang(lang)
+    context = _get_dashboard_context(
+        request,
+        db,
+        user=user,
+        lang=lang_code,
+        toast_message=t("msg_payment_reopened", lang=lang_code),
+    )
+    return templates.TemplateResponse(
+        request=request, name="partials/dashboard_content.html", context=context
     )
 
 
