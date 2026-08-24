@@ -10,7 +10,12 @@ from sqlalchemy.orm import Session
 
 from app.models.commitment import Commitment, StatusEnum
 from app.models.deposit import Deposit
-from app.schemas.deposit import MonthlyCashFlowResponse, ReserveBalanceResponse
+from app.models.payment import Payment
+from app.schemas.deposit import (
+    MonthlyCashFlowResponse,
+    MonthlyForecastResponse,
+    ReserveBalanceResponse,
+)
 from app.services.recurrence import _quantize_currency, resolve_upcoming_occurrences
 
 
@@ -27,6 +32,16 @@ def calculate_monthly_cash_flow(
         from_date=month_start,
         days=(month_end - month_start).days,
     )
+    payments = db.scalars(
+        select(Payment).where(
+            Payment.occurrence_date >= month_start,
+            Payment.occurrence_date <= month_end,
+        )
+    ).all()
+    payment_by_occurrence = {
+        (payment.commitment_id, payment.occurrence_date): payment
+        for payment in payments
+    }
 
     deposit_values = db.scalars(
         select(Deposit.amount).where(
@@ -38,13 +53,34 @@ def calculate_monthly_cash_flow(
     bills_total = _quantize_currency(
         sum((item.amount for item in occurrences), start=Decimal("0.00"))
     )
-    paid_occurrences = [item for item in occurrences if item.status == StatusEnum.PAID]
+    paid_occurrences = [
+        item
+        for item in occurrences
+        if item.status == StatusEnum.PAID
+        or (item.original_commitment_id, item.occurrence_date) in payment_by_occurrence
+    ]
     paid = _quantize_currency(
-        sum((item.amount for item in paid_occurrences), start=Decimal("0.00"))
+        sum(
+            (
+                payment_by_occurrence[
+                    (item.original_commitment_id, item.occurrence_date)
+                ].paid_amount
+                if (item.original_commitment_id, item.occurrence_date)
+                in payment_by_occurrence
+                else item.amount
+                for item in paid_occurrences
+            ),
+            start=Decimal("0.00"),
+        )
     )
-    pending = _quantize_currency(bills_total - paid)
+    pending = _quantize_currency(
+        sum(
+            (item.amount for item in occurrences if item not in paid_occurrences),
+            start=Decimal("0.00"),
+        )
+    )
     available_now = _quantize_currency(received - paid)
-    projected_balance = _quantize_currency(received - bills_total)
+    projected_balance = _quantize_currency(available_now - pending)
 
     return MonthlyCashFlowResponse(
         month=month_start,
@@ -59,6 +95,46 @@ def calculate_monthly_cash_flow(
         paid_count=len(paid_occurrences),
         pending_count=len(occurrences) - len(paid_occurrences),
     )
+
+
+def calculate_cash_flow_forecast(
+    db: Session,
+    commitments: Sequence[Commitment],
+    start_month: date,
+    months: int = 12,
+) -> list[MonthlyForecastResponse]:
+    """Return exact calendar-month requirements without annualized averages."""
+    rows: list[MonthlyForecastResponse] = []
+    for offset in range(months):
+        month = start_month.replace(day=1) + relativedelta(months=offset)
+        flow = calculate_monthly_cash_flow(db, commitments, month)
+        month_end = month + relativedelta(months=1, days=-1)
+        occurrences = resolve_upcoming_occurrences(
+            commitments, month, (month_end - month).days
+        )
+        notable = [
+            item.description
+            for item in occurrences
+            if item.recurrence.value in {"semiannual", "annual"}
+        ]
+        status = (
+            "paid"
+            if flow.bills_count > 0 and flow.pending_count == 0
+            else "partial"
+            if flow.paid_count > 0
+            else "pending"
+        )
+        rows.append(
+            MonthlyForecastResponse(
+                month=month,
+                total=flow.bills_total,
+                paid=flow.paid,
+                pending=flow.pending,
+                status=status,
+                notable_items=notable,
+            )
+        )
+    return rows
 
 
 def calculate_reserve_balance(db: Session) -> ReserveBalanceResponse:

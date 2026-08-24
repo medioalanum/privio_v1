@@ -13,8 +13,13 @@ commitment projections, per-occurrence adjustments, and deposit tracking.
 - Edit a single occurrence, the selected occurrence and all future ones, or the
   entire recurring series.
 - Delete one occurrence or the complete recurring series.
-- Suggested monthly budget and upcoming due-date projections.
-- Reserve balance based on deposits and paid commitments.
+- Month-by-month cash flow with received, scheduled, paid, pending, available,
+  and projected amounts.
+- Calendar-month navigation that is preserved across HTMX actions.
+- Actual payment records with separate due date, payment date, paid amount, and
+  optional notes.
+- Exact 12-month forecast with full semiannual and annual bills in their due
+  months instead of monthly averages.
 - Portuguese, English, and Italian dashboard translations.
 - Server-rendered UI with Jinja2, HTMX, and Pico.css.
 - OpenAPI documentation through FastAPI Swagger UI and ReDoc.

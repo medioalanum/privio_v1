@@ -24,6 +24,7 @@
             <tbody>
                 {% if occurrences %}
                     {% for item in occurrences %}
+                        {% set payment = payments_by_commitment.get(item.original_commitment_id, {}).get(item.occurrence_date.isoformat()) if payments_by_commitment else none %}
                         <tr>
                             <td><strong>{{ item.occurrence_date.strftime('%d/%m/%Y') }}</strong></td>
                             <td>
@@ -54,10 +55,22 @@
                                 <span class="badge {% if item.status.value == 'paid' %}badge-paid{% else %}badge-pending{% endif %}">
                                     {{ t('status_' + item.status.value) }}
                                 </span>
+                                {% if payment %}
+                                    <small style="display: block; margin-top: .35rem;">{{ t('paid_on') }} {{ payment.payment_date.strftime('%d/%m/%Y') }}{% if payment.paid_amount != payment.planned_amount %}<br>{{ t('paid_amount_label') }} R$ {{ "{:,.2f}".format(payment.paid_amount) }}{% endif %}</small>
+                                {% endif %}
                             </td>
                             {% if user.role.value == 'editor' %}
                                 <td>
                                     <div class="action-btns">
+                                        {% if item.status.value == 'paid' %}
+                                            <button class="outline secondary" hx-delete="/ui/payments/{{ item.original_commitment_id }}/{{ item.occurrence_date.isoformat() }}?lang={{ lang }}&month={{ selected_month_key }}" hx-target="#dashboard-content" hx-swap="innerHTML" aria-label="{{ t('btn_reopen') }}" title="{{ t('btn_reopen') }}">
+                                                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7M3 4v6h6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                            </button>
+                                        {% else %}
+                                            <button class="outline primary" hx-get="/ui/payments/new?commitment_id={{ item.original_commitment_id }}&occurrence_date={{ item.occurrence_date.isoformat() }}&amount={{ item.amount }}&lang={{ lang }}&month={{ selected_month_key }}" hx-target="#modal-container" hx-swap="innerHTML" aria-label="{{ t('btn_mark_paid') }}" title="{{ t('btn_mark_paid') }}">
+                                                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m5 12 4 4L19 6" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                            </button>
+                                        {% endif %}
                                         <button
                                             class="secondary outline"
                                             hx-get="/ui/commitments/{{ item.original_commitment_id }}/edit?occurrence_date={{ item.occurrence_date.isoformat() }}&lang={{ lang }}&month={{ selected_month_key }}"
