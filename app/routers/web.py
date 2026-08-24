@@ -125,7 +125,12 @@ def _get_dashboard_context(
 
     suggested = calculate_suggested_monthly(commitments)
     reserve = calculate_reserve_balance(db)
-    occurrences = resolve_upcoming_occurrences(commitments, from_date=today, days=days)
+    month_start = today.replace(day=1)
+    occurrences = resolve_upcoming_occurrences(
+        commitments, from_date=month_start, days=days
+    )
+    for occurrence in occurrences:
+        occurrence.days_until = (occurrence.occurrence_date - today).days
 
     return {
         "request": request,
@@ -172,7 +177,12 @@ def get_upcoming_partial(
     today = date.today()
     lang_code = normalize_lang(lang)
     commitments = db.scalars(select(Commitment)).all()
-    occurrences = resolve_upcoming_occurrences(commitments, from_date=today, days=days)
+    month_start = today.replace(day=1)
+    occurrences = resolve_upcoming_occurrences(
+        commitments, from_date=month_start, days=days
+    )
+    for occurrence in occurrences:
+        occurrence.days_until = (occurrence.occurrence_date - today).days
 
     return templates.TemplateResponse(
         request=request,
@@ -337,6 +347,7 @@ def update_commitment_form_action(
             db.add(adjustment)
         adjustment.description = description
         adjustment.amount = amount
+        adjustment.adjusted_date = due_date if scope == "single" else None
         adjustment.category = category
         adjustment.status = status_val
         adjustment.is_estimate = is_estimate

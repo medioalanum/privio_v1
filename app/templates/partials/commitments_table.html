@@ -40,22 +40,6 @@
                                 {% if c.is_estimate %}
                                     <span class="badge badge-estimate" title="{{ t('estimate_badge') }}">{{ t('estimate_badge') }}</span>
                                 {% endif %}
-                                {% if c.adjustments %}
-                                    <details style="margin-top: .4rem; font-size: .8rem;">
-                                        <summary>Ajustes da série ({{ c.adjustments|length }})</summary>
-                                        {% for adjustment in c.adjustments|sort(attribute='effective_date') %}
-                                            <div style="color: var(--pico-muted-color); margin-top: .25rem;">
-                                                {{ adjustment.effective_date.strftime('%d/%m/%Y') }} —
-                                                {% if adjustment.is_deleted %}
-                                                    ocorrência excluída
-                                                {% else %}
-                                                    {% if adjustment.amount is not none %}R$ {{ "{:,.2f}".format(adjustment.amount) }}{% endif %}
-                                                    · {% if adjustment.scope == 'single' %}somente esta ocorrência{% else %}esta e as próximas{% endif %}
-                                                {% endif %}
-                                            </div>
-                                        {% endfor %}
-                                    </details>
-                                {% endif %}
                             </td>
                             <td><small>{{ c.category }}</small></td>
                             <td><strong>R$ {{ "{:,.2f}".format(c.amount) }}</strong></td>

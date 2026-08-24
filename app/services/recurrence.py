@@ -56,6 +56,8 @@ def _apply_adjustment(
         value = getattr(adjustment, field)
         if value is not None:
             setattr(occurrence, field, value)
+    if adjustment.adjusted_date is not None:
+        occurrence.occurrence_date = adjustment.adjusted_date
 
 
 def _monthly_occurrence_date(item: Commitment, target: date) -> date | None:
@@ -88,7 +90,12 @@ def resolve_upcoming_occurrences(
     Returns:
         List of CommitmentOccurrenceResponse items sorted chronologically by occurrence date.
     """
-    to_date = from_date + timedelta(days=days)
+    requested_from = from_date
+    requested_to = from_date + timedelta(days=days)
+    # Generate a small buffer so a dated exception can move an occurrence into
+    # the requested window (for example, from the 15th to the 24th).
+    from_date = requested_from - timedelta(days=31)
+    to_date = requested_to + timedelta(days=31)
     occurrences: list[CommitmentOccurrenceResponse] = []
 
     for item in commitments:
@@ -252,7 +259,9 @@ def resolve_upcoming_occurrences(
             if adjustment.is_deleted:
                 continue
             _apply_adjustment(occurrence, adjustment)
-        adjusted_occurrences.append(occurrence)
+        if requested_from <= occurrence.occurrence_date <= requested_to:
+            occurrence.days_until = (occurrence.occurrence_date - requested_from).days
+            adjusted_occurrences.append(occurrence)
 
     occurrences = adjusted_occurrences
     # Sort all occurrences by occurrence_date, then by description

@@ -52,6 +52,8 @@
                             <td>
                                 {% if item.days_until == 0 %}
                                     <span style="color: #ef4444; font-weight: bold;">{{ t('today_badge') }}</span>
+                                {% elif item.days_until < 0 %}
+                                    <span style="color: #ef4444; font-weight: bold;">há {{ -item.days_until }} dias</span>
                                 {% elif item.days_until == 1 %}
                                     <span style="color: #f59e0b; font-weight: bold;">{{ t('tomorrow_badge') }}</span>
                                 {% else %}

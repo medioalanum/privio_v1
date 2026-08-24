@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import inspect, text
 
 from app.config import settings
 from app.database import Base, engine
@@ -19,6 +20,18 @@ async def lifespan(_: FastAPI) -> AsyncGenerator[None, None]:
     # Attempt to create tables on startup if database is reachable
     try:
         Base.metadata.create_all(bind=engine)
+        columns = {
+            column["name"]
+            for column in inspect(engine).get_columns("commitment_adjustments")
+        }
+        if "adjusted_date" not in columns:
+            with engine.begin() as connection:
+                connection.execute(
+                    text(
+                        "ALTER TABLE commitment_adjustments "
+                        "ADD COLUMN adjusted_date DATE"
+                    )
+                )
     except Exception:
         # Fallback if DB is not immediately available or when running unit test suites
         pass

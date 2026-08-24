@@ -100,6 +100,7 @@ class CommitmentAdjustment(Base):
         ForeignKey("commitments.id", ondelete="CASCADE"), nullable=False, index=True
     )
     effective_date: Mapped[date] = mapped_column(Date, nullable=False, index=True)
+    adjusted_date: Mapped[date | None] = mapped_column(Date)
     scope: Mapped[str] = mapped_column(String(10), nullable=False)
     description: Mapped[str | None] = mapped_column(String(255))
     amount: Mapped[Decimal | None] = mapped_column(Numeric(12, 2))

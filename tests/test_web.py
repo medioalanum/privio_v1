@@ -218,6 +218,7 @@ def test_recurring_occurrence_edit_scopes_and_single_delete(
         f"/ui/commitments/{commitment_id}/edit",
         data={
             **base_form,
+            "due_date": "2026-08-24",
             "amount": "440.00",
             "scope": "single",
             "occurrence_date": "2026-08-15",
@@ -245,7 +246,8 @@ def test_recurring_occurrence_edit_scopes_and_single_delete(
         for item in occurrences
         if item["description"] == "School Pedro"
     }
-    assert amounts["2026-08-15"] == "440.00"
+    assert "2026-08-15" not in amounts
+    assert amounts["2026-08-24"] == "440.00"
     assert amounts["2026-09-15"] == "400.00"
     assert amounts["2026-10-15"] == "450.00"
     assert amounts["2026-11-15"] == "450.00"
