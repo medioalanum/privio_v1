@@ -405,6 +405,10 @@ def toggle_commitment_status(
 
     target_status: StatusEnum
     if occurrence_date is not None:
+        # A recurring series is a schedule template. Its base status must remain
+        # pending; payment/reopening belongs to the selected occurrence.
+        if commitment.recurrence != RecurrenceEnum.NONE:
+            commitment.status = StatusEnum.PENDING
         displayed = next(
             (
                 item
