@@ -220,10 +220,13 @@ def test_recurring_occurrence_edit_scopes_and_single_delete(
             **base_form,
             "amount": "440.00",
             "scope": "single",
-            "occurrence_date": "2026-09-15",
+            "occurrence_date": "2026-08-15",
         },
     )
     assert single.status_code == 200
+    assert "ocorrência de 15/08/2026 atualizada" in single.text
+    suggested = client.get("/suggested-monthly").json()
+    assert suggested["monthly_sum"] == "440.00"
 
     future = client.post(
         f"/ui/commitments/{commitment_id}/edit",
@@ -236,25 +239,20 @@ def test_recurring_occurrence_edit_scopes_and_single_delete(
     )
     assert future.status_code == 200
 
-    occurrences = client.get(
-        "/upcoming?from_date=2026-09-01&days=100"
-    ).json()
+    occurrences = client.get("/upcoming?from_date=2026-08-01&days=130").json()
     amounts = {
         item["occurrence_date"]: item["amount"]
         for item in occurrences
         if item["description"] == "School Pedro"
     }
-    assert amounts["2026-09-15"] == "440.00"
+    assert amounts["2026-08-15"] == "440.00"
+    assert amounts["2026-09-15"] == "400.00"
     assert amounts["2026-10-15"] == "450.00"
     assert amounts["2026-11-15"] == "450.00"
 
-    deleted = client.delete(
-        f"/ui/commitments/{commitment_id}/occurrences/2026-11-15"
-    )
+    deleted = client.delete(f"/ui/commitments/{commitment_id}/occurrences/2026-11-15")
     assert deleted.status_code == 200
-    after_delete = client.get(
-        "/upcoming?from_date=2026-09-01&days=100"
-    ).json()
+    after_delete = client.get("/upcoming?from_date=2026-09-01&days=100").json()
     dates = {
         item["occurrence_date"]
         for item in after_delete
