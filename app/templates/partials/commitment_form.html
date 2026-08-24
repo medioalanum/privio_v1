@@ -9,9 +9,9 @@
 
         <form 
             {% if commitment %}
-                hx-post="/ui/commitments/{{ commitment.id }}/edit?lang={{ lang }}"
+                hx-post="/ui/commitments/{{ commitment.id }}/edit?lang={{ lang }}&month={{ selected_month_key }}"
             {% else %}
-                hx-post="/ui/commitments?lang={{ lang }}"
+                hx-post="/ui/commitments?lang={{ lang }}&month={{ selected_month_key }}"
             {% endif %}
             hx-target="#dashboard-content"
             hx-swap="innerHTML"
@@ -21,10 +21,10 @@
                 <input type="hidden" name="occurrence_date" value="{{ occurrence_date.isoformat() }}">
                 {% if commitment.recurrence.value != 'none' %}
                     <fieldset>
-                        <legend>Aplicar alterações</legend>
-                        <label><input type="radio" name="scope" value="single" checked> Somente {{ occurrence_date.strftime('%m/%Y') }}</label>
-                        <label><input type="radio" name="scope" value="future"> Este mês e os próximos</label>
-                        <label><input type="radio" name="scope" value="series"> Toda a série, inclusive anteriores</label>
+                        <legend>{{ t('scope_legend') }}</legend>
+                        <label><input type="radio" name="scope" value="single" checked> {{ t('scope_single', month=occurrence_date.strftime('%m/%Y')) }}</label>
+                        <label><input type="radio" name="scope" value="future"> {{ t('scope_future', month=occurrence_date.strftime('%m/%Y')) }}</label>
+                        <label><input type="radio" name="scope" value="series"> {{ t('scope_series') }}</label>
                     </fieldset>
                 {% else %}
                     <input type="hidden" name="scope" value="series">

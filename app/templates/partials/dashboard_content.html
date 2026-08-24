@@ -5,6 +5,12 @@
     </div>
 {% endif %}
 
+<nav class="month-navigation" aria-label="{{ t('month_navigation') }}">
+    <button class="secondary outline" hx-get="/?lang={{ lang }}&month={{ previous_month_key }}" hx-target="#dashboard-content" hx-select="#dashboard-content" hx-swap="outerHTML" aria-label="{{ t('previous_month') }}">‹</button>
+    <strong>{{ selected_month_label }}</strong>
+    <button class="secondary outline" hx-get="/?lang={{ lang }}&month={{ next_month_key }}" hx-target="#dashboard-content" hx-select="#dashboard-content" hx-swap="outerHTML" aria-label="{{ t('next_month') }}">›</button>
+</nav>
+
 <!-- Stats Cards -->
 {% include "partials/stats_cards.html" %}
 

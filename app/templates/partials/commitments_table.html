@@ -7,7 +7,7 @@
         {% if user.role.value == 'editor' %}
             <button 
                 class="primary"
-                hx-get="/ui/commitments/new?lang={{ lang }}" 
+                hx-get="/ui/commitments/new?lang={{ lang }}&month={{ selected_month_key }}"
                 hx-target="#modal-container" 
                 hx-swap="innerHTML"
                 style="margin-bottom: 0;">
@@ -60,7 +60,7 @@
                                     <div class="action-btns" style="justify-content: flex-end;">
                                         <button 
                                             class="outline {% if (effective.status.value if effective else c.status.value) == 'paid' %}secondary{% else %}primary{% endif %}"
-                                            hx-post="/ui/commitments/{{ c.id }}/toggle-paid?lang={{ lang }}{% if effective %}&occurrence_date={{ effective.occurrence_date.isoformat() }}{% endif %}"
+                                            hx-post="/ui/commitments/{{ c.id }}/toggle-paid?lang={{ lang }}&month={{ selected_month_key }}{% if effective %}&occurrence_date={{ effective.occurrence_date.isoformat() }}{% endif %}"
                                             hx-target="#dashboard-content"
                                             hx-swap="innerHTML"
                                             aria-label="{% if (effective.status.value if effective else c.status.value) == 'paid' %}{{ t('btn_reopen') }}{% else %}{{ t('btn_mark_paid') }}{% endif %}"
@@ -74,7 +74,7 @@
                                         
                                         <button 
                                             class="secondary outline"
-                                            hx-get="/ui/commitments/{{ c.id }}/edit?lang={{ lang }}"
+                                            hx-get="/ui/commitments/{{ c.id }}/edit?lang={{ lang }}&month={{ selected_month_key }}"
                                             hx-target="#modal-container"
                                             hx-swap="innerHTML"
                                             aria-label="{{ t('btn_edit') }}"
@@ -84,7 +84,7 @@
 
                                         <button 
                                             class="outline action-delete"
-                                            hx-delete="/ui/commitments/{{ c.id }}?lang={{ lang }}"
+                                            hx-delete="/ui/commitments/{{ c.id }}?lang={{ lang }}&month={{ selected_month_key }}"
                                             hx-target="#dashboard-content"
                                             hx-swap="innerHTML"
                                             aria-label="{{ t('btn_delete_series') }}"

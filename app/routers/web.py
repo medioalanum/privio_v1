@@ -6,6 +6,7 @@ from decimal import Decimal
 from pathlib import Path
 from typing import Annotated
 
+from dateutil.relativedelta import relativedelta
 from fastapi import (
     APIRouter,
     Depends,
@@ -46,6 +47,17 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
 router = APIRouter(include_in_schema=False)
+
+
+def _selected_month(request: Request) -> date:
+    """Return the requested calendar month, falling back to the current month."""
+    raw = request.query_params.get("month")
+    if raw:
+        try:
+            return date.fromisoformat(f"{raw}-01")
+        except ValueError:
+            pass
+    return date.today().replace(day=1)
 
 
 @router.get("/login", response_class=HTMLResponse)
@@ -115,15 +127,17 @@ def _get_dashboard_context(
 ) -> dict[str, object]:
     """Helper to assemble full context needed to render dashboard or its partial."""
     today = date.today()
+    selected_month = _selected_month(request)
     lang_code = normalize_lang(lang)
     commitments: Sequence[Commitment] = db.scalars(
         select(Commitment).order_by(Commitment.due_date.asc(), Commitment.id.asc())
     ).all()
 
-    month_start = today.replace(day=1)
+    month_start = selected_month
+    month_end = month_start + relativedelta(months=1, days=-1)
     cash_flow = calculate_monthly_cash_flow(db, commitments, month_start)
     occurrences = resolve_upcoming_occurrences(
-        commitments, from_date=month_start, days=days
+        commitments, from_date=month_start, days=(month_end - month_start).days
     )
     for occurrence in occurrences:
         occurrence.days_until = (occurrence.occurrence_date - today).days
@@ -140,6 +154,14 @@ def _get_dashboard_context(
         "user": user,
         "today": today,
         "days": days,
+        "selected_month": selected_month,
+        "selected_month_key": selected_month.strftime("%Y-%m"),
+        "previous_month_key": (selected_month - relativedelta(months=1)).strftime(
+            "%Y-%m"
+        ),
+        "next_month_key": (selected_month + relativedelta(months=1)).strftime("%Y-%m"),
+        "selected_month_label": t(f"month_{selected_month.month}", lang=lang_code)
+        + f" {selected_month.year}",
         "lang": lang_code,
         "t": lambda key, **kwargs: t(key, lang=lang_code, **kwargs),
         "translations": get_translations(lang_code),
@@ -180,9 +202,10 @@ def get_upcoming_partial(
     today = date.today()
     lang_code = normalize_lang(lang)
     commitments = db.scalars(select(Commitment)).all()
-    month_start = today.replace(day=1)
+    month_start = _selected_month(request)
+    month_end = month_start + relativedelta(months=1, days=-1)
     occurrences = resolve_upcoming_occurrences(
-        commitments, from_date=month_start, days=days
+        commitments, from_date=month_start, days=(month_end - month_start).days
     )
     for occurrence in occurrences:
         occurrence.days_until = (occurrence.occurrence_date - today).days
@@ -198,6 +221,7 @@ def get_upcoming_partial(
             "lang": lang_code,
             "t": lambda key, **kwargs: t(key, lang=lang_code, **kwargs),
             "today": today,
+            "selected_month_key": month_start.strftime("%Y-%m"),
         },
     )
 
@@ -220,6 +244,7 @@ def new_commitment_form(
             "lang": lang_code,
             "t": lambda key, **kwargs: t(key, lang=lang_code, **kwargs),
             "today": date.today(),
+            "selected_month_key": _selected_month(request).strftime("%Y-%m"),
         },
     )
 
@@ -252,6 +277,7 @@ def edit_commitment_form(
             "lang": lang_code,
             "t": lambda key, **kwargs: t(key, lang=lang_code, **kwargs),
             "today": date.today(),
+            "selected_month_key": _selected_month(request).strftime("%Y-%m"),
         },
     )
 
@@ -508,6 +534,7 @@ def delete_commitment_occurrence(
     occurrence_date: date,
     db: Annotated[Session, Depends(get_db)],
     user: Annotated[AuthenticatedUser, Depends(require_editor_web)],
+    scope: Annotated[str, Query(pattern="^(single|future)$")] = "single",
     lang: Annotated[str | None, Query()] = None,
 ) -> Response:
     """Delete one projected occurrence while preserving the recurring series."""
@@ -518,14 +545,14 @@ def delete_commitment_occurrence(
         select(CommitmentAdjustment).where(
             CommitmentAdjustment.commitment_id == commitment_id,
             CommitmentAdjustment.effective_date == occurrence_date,
-            CommitmentAdjustment.scope == "single",
+            CommitmentAdjustment.scope == scope,
         )
     )
     if adjustment is None:
         adjustment = CommitmentAdjustment(
             commitment_id=commitment_id,
             effective_date=occurrence_date,
-            scope="single",
+            scope=scope,
         )
         db.add(adjustment)
     adjustment.is_deleted = True
@@ -537,7 +564,11 @@ def delete_commitment_occurrence(
         user=user,
         days=30,
         lang=lang_code,
-        toast_message=f"Ocorrência de {occurrence_date:%d/%m/%Y} excluída.",
+        toast_message=(
+            f"Vencimentos a partir de {occurrence_date:%d/%m/%Y} excluídos."
+            if scope == "future"
+            else f"Vencimento de {occurrence_date:%d/%m/%Y} excluído."
+        ),
     )
     return templates.TemplateResponse(
         request=request,
@@ -563,6 +594,7 @@ def new_deposit_form(
             "lang": lang_code,
             "t": lambda key, **kwargs: t(key, lang=lang_code, **kwargs),
             "today": date.today(),
+            "selected_month_key": _selected_month(request).strftime("%Y-%m"),
         },
     )
 
