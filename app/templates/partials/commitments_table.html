@@ -34,24 +34,25 @@
             <tbody id="commitments-tbody">
                 {% if commitments %}
                     {% for c in commitments %}
+                        {% set effective = current_month_occurrences.get(c.id) if current_month_occurrences else none %}
                         <tr id="commitment-row-{{ c.id }}">
                             <td>
-                                <strong>{{ c.description }}</strong>
-                                {% if c.is_estimate %}
+                                <strong>{{ effective.description if effective else c.description }}</strong>
+                                {% if (effective.is_estimate if effective else c.is_estimate) %}
                                     <span class="badge badge-estimate" title="{{ t('estimate_badge') }}">{{ t('estimate_badge') }}</span>
                                 {% endif %}
                             </td>
-                            <td><small>{{ c.category }}</small></td>
-                            <td><strong>R$ {{ "{:,.2f}".format(c.amount) }}</strong></td>
-                            <td>{{ c.due_date.strftime('%d/%m/%Y') }}</td>
+                            <td><small>{{ effective.category if effective else c.category }}</small></td>
+                            <td><strong>R$ {{ "{:,.2f}".format(effective.amount if effective else c.amount) }}</strong></td>
+                            <td>{{ (effective.occurrence_date if effective else c.due_date).strftime('%d/%m/%Y') }}</td>
                             <td>
                                 <span class="badge badge-recurrence">
                                     {{ t('rec_' + c.recurrence.value) }}
                                 </span>
                             </td>
                             <td>
-                                <span class="badge {% if c.status.value == 'paid' %}badge-paid{% else %}badge-pending{% endif %}">
-                                    {{ t('status_' + c.status.value) }}
+                                <span class="badge {% if (effective.status.value if effective else c.status.value) == 'paid' %}badge-paid{% else %}badge-pending{% endif %}">
+                                    {{ t('status_' + (effective.status.value if effective else c.status.value)) }}
                                 </span>
                             </td>
                             {% if user.role.value == 'editor' %}
@@ -62,8 +63,13 @@
                                             hx-post="/ui/commitments/{{ c.id }}/toggle-paid?lang={{ lang }}"
                                             hx-target="#dashboard-content"
                                             hx-swap="innerHTML"
-                                            title="Toggle Status">
-                                            {% if c.status.value == 'paid' %}{{ t('btn_reopen') }}{% else %}{{ t('btn_mark_paid') }}{% endif %}
+                                            aria-label="{% if c.status.value == 'paid' %}{{ t('btn_reopen') }}{% else %}{{ t('btn_mark_paid') }}{% endif %}"
+                                            title="{% if c.status.value == 'paid' %}{{ t('btn_reopen') }}{% else %}{{ t('btn_mark_paid') }}{% endif %}">
+                                            {% if c.status.value == 'paid' %}
+                                                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7M3 4v6h6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                            {% else %}
+                                                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m5 12 4 4L19 6" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                            {% endif %}
                                         </button>
                                         
                                         <button 
@@ -71,18 +77,20 @@
                                             hx-get="/ui/commitments/{{ c.id }}/edit?lang={{ lang }}"
                                             hx-target="#modal-container"
                                             hx-swap="innerHTML"
+                                            aria-label="{{ t('btn_edit') }}"
                                             title="{{ t('btn_edit') }}">
-                                            {{ t('btn_edit') }}
+                                            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4Z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="m13.5 6.5 4 4" stroke-width="2"/></svg>
                                         </button>
 
                                         <button 
-                                            class="outline"
-                                            style="color: #ef4444; border-color: #ef4444;"
+                                            class="outline action-delete"
                                             hx-delete="/ui/commitments/{{ c.id }}?lang={{ lang }}"
                                             hx-target="#dashboard-content"
                                             hx-swap="innerHTML"
+                                            aria-label="{{ t('btn_delete_series') }}"
+                                            title="{{ t('btn_delete_series') }}"
                                             hx-confirm="{{ t('confirm_delete_commitment') }}">
-                                            Excluir toda a série
+                                            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3m3 0-1 13H7L6 7m4 4v5m4-5v5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                                         </button>
                                     </div>
                                 </td>

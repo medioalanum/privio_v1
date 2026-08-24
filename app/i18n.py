@@ -51,11 +51,12 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         # Commitments Table
         "commitments_title": "📋 Todos os Compromissos",
         "commitments_subtitle": "Cadastro e gerenciamento das regras de compromissos",
-        "th_base_due_date": "Vencimento Base",
+        "th_base_due_date": "Vencimento do Mês",
         "btn_mark_paid": "✓ Marcar Pago",
         "btn_reopen": "↩ Reabrir",
         "btn_edit": "✏️ Editar",
         "btn_delete": "🗑️",
+        "btn_delete_series": "Excluir toda a série",
         "confirm_delete_commitment": "Tem certeza que deseja excluir este compromisso?",
         "no_commitments": "Nenhum compromisso cadastrado ainda. Clique em '➕ Novo Compromisso' para adicionar.",
         # Modal & Form
@@ -142,11 +143,12 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         # Commitments Table
         "commitments_title": "📋 All Commitments",
         "commitments_subtitle": "Configuration and management of commitment rules",
-        "th_base_due_date": "Base Due Date",
+        "th_base_due_date": "Current Month Due Date",
         "btn_mark_paid": "✓ Mark Paid",
         "btn_reopen": "↩ Reopen",
         "btn_edit": "✏️ Edit",
         "btn_delete": "🗑️",
+        "btn_delete_series": "Delete entire series",
         "confirm_delete_commitment": "Are you sure you want to delete this commitment?",
         "no_commitments": "No commitments registered yet. Click '➕ New Commitment' to add one.",
         # Modal & Form
@@ -233,11 +235,12 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         # Commitments Table
         "commitments_title": "📋 Tutti gli Impegni",
         "commitments_subtitle": "Configurazione e gestione delle regole degli impegni",
-        "th_base_due_date": "Scadenza Base",
+        "th_base_due_date": "Scadenza del Mese",
         "btn_mark_paid": "✓ Segna Pagato",
         "btn_reopen": "↩ Riapri",
         "btn_edit": "✏️ Modifica",
         "btn_delete": "🗑️",
+        "btn_delete_series": "Elimina l'intera serie",
         "confirm_delete_commitment": "Sei sicuro di voler eliminare questo impegno?",
         "no_commitments": "Nessun impegno registrato. Clicca su '➕ Nuovo Impegno' per aggiungere.",
         # Modal & Form

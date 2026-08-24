@@ -226,6 +226,8 @@ def test_recurring_occurrence_edit_scopes_and_single_delete(
     )
     assert single.status_code == 200
     assert "ocorrência de 15/08/2026 atualizada" in single.text
+    assert "440.00" in single.text
+    assert "24/08/2026" in single.text
     suggested = client.get("/suggested-monthly").json()
     assert suggested["monthly_sum"] == "440.00"
 
@@ -264,3 +266,24 @@ def test_recurring_occurrence_edit_scopes_and_single_delete(
 
     base = client.get(f"/commitments/{commitment_id}").json()
     assert base["amount"] == "400.00"
+
+    series = client.post(
+        f"/ui/commitments/{commitment_id}/edit",
+        data={
+            **base_form,
+            "description": "School Pedro updated",
+            "amount": "475.00",
+            "due_date": "2026-08-20",
+            "scope": "series",
+            "occurrence_date": "2026-08-15",
+        },
+    )
+    assert series.status_code == 200
+    updated_base = client.get(f"/commitments/{commitment_id}").json()
+    assert updated_base["description"] == "School Pedro updated"
+    assert updated_base["amount"] == "475.00"
+    assert updated_base["due_date"] == "2026-08-20"
+
+    removed_series = client.delete(f"/ui/commitments/{commitment_id}")
+    assert removed_series.status_code == 200
+    assert client.get(f"/commitments/{commitment_id}").status_code == 404
