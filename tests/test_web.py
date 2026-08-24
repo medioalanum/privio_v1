@@ -229,6 +229,27 @@ def test_recurring_occurrence_edit_scopes_and_single_delete(
     assert "440.00" in single.text
     assert "24/08/2026" in single.text
     assert 'aria-label="Excluir somente esta ocorrência"' in single.text
+
+    paid = client.post(
+        f"/ui/commitments/{commitment_id}/toggle-paid",
+        params={"occurrence_date": "2026-08-24"},
+    )
+    assert paid.status_code == 200
+    assert "marcado como pago" in paid.text
+    assert "School Pedro" in paid.text
+    assert "Pago" in paid.text
+    assert 'aria-label="↩ Reabrir"' in paid.text
+    assert client.get(f"/commitments/{commitment_id}").json()["status"] == "pending"
+
+    reopened = client.post(
+        f"/ui/commitments/{commitment_id}/toggle-paid",
+        params={"occurrence_date": "2026-08-24"},
+    )
+    assert reopened.status_code == 200
+    assert "reaberto como pendente" in reopened.text
+    assert "Pendente" in reopened.text
+    assert 'aria-label="✓ Marcar Pago"' in reopened.text
+
     suggested = client.get("/suggested-monthly").json()
     assert suggested["monthly_sum"] == "440.00"
 
