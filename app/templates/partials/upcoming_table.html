@@ -41,7 +41,7 @@
                     <th>{{ t('th_recurrence') }}</th>
                     <th>{{ t('th_amount') }}</th>
                     <th>{{ t('th_status') }}</th>
-                    {% if user.role.value == 'editor' %}<th>Ações</th>{% endif %}
+                    {% if user.role.value == 'editor' %}<th>{{ t('th_actions') }}</th>{% endif %}
                 </tr>
             </thead>
             <tbody>
@@ -60,24 +60,6 @@
                                     {{ t('days_badge', days=item.days_until) }}
                                 {% endif %}
                             </td>
-                            {% if user.role.value == 'editor' %}
-                                <td>
-                                    <div class="action-btns">
-                                        <button
-                                            class="secondary outline"
-                                            hx-get="/ui/commitments/{{ item.original_commitment_id }}/edit?occurrence_date={{ item.occurrence_date.isoformat() }}&lang={{ lang }}"
-                                            hx-target="#modal-container"
-                                            hx-swap="innerHTML">Editar</button>
-                                        <button
-                                            class="outline"
-                                            style="color: #ef4444; border-color: #ef4444;"
-                                            hx-delete="/ui/commitments/{{ item.original_commitment_id }}/occurrences/{{ item.occurrence_date.isoformat() }}?lang={{ lang }}"
-                                            hx-target="#dashboard-content"
-                                            hx-swap="innerHTML"
-                                            hx-confirm="Excluir somente esta ocorrência?">Excluir ocorrência</button>
-                                    </div>
-                                </td>
-                            {% endif %}
                             <td>
                                 {{ item.description }}
                                 {% if item.is_estimate %}
@@ -96,6 +78,31 @@
                                     {{ t('status_' + item.status.value) }}
                                 </span>
                             </td>
+                            {% if user.role.value == 'editor' %}
+                                <td>
+                                    <div class="action-btns">
+                                        <button
+                                            class="secondary outline"
+                                            hx-get="/ui/commitments/{{ item.original_commitment_id }}/edit?occurrence_date={{ item.occurrence_date.isoformat() }}&lang={{ lang }}"
+                                            hx-target="#modal-container"
+                                            hx-swap="innerHTML"
+                                            aria-label="{{ t('btn_edit') }}"
+                                            title="{{ t('btn_edit') }}">
+                                            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4Z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="m13.5 6.5 4 4" stroke-width="2"/></svg>
+                                        </button>
+                                        <button
+                                            class="outline action-delete"
+                                            hx-delete="/ui/commitments/{{ item.original_commitment_id }}/occurrences/{{ item.occurrence_date.isoformat() }}?lang={{ lang }}"
+                                            hx-target="#dashboard-content"
+                                            hx-swap="innerHTML"
+                                            aria-label="{{ t('btn_delete_occurrence') }}"
+                                            title="{{ t('btn_delete_occurrence') }}"
+                                            hx-confirm="{{ t('confirm_delete_occurrence') }}">
+                                            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" stroke-width="2.2" stroke-linecap="round"/></svg>
+                                        </button>
+                                    </div>
+                                </td>
+                            {% endif %}
                         </tr>
                     {% endfor %}
                 {% else %}

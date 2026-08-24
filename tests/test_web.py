@@ -228,6 +228,7 @@ def test_recurring_occurrence_edit_scopes_and_single_delete(
     assert "ocorrência de 15/08/2026 atualizada" in single.text
     assert "440.00" in single.text
     assert "24/08/2026" in single.text
+    assert 'aria-label="Excluir somente esta ocorrência"' in single.text
     suggested = client.get("/suggested-monthly").json()
     assert suggested["monthly_sum"] == "440.00"
 
