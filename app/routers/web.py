@@ -344,7 +344,14 @@ def update_commitment_form_action(
 
     db.commit()
 
-    toast = t("msg_commitment_updated", lang=lang_code, desc=description)
+    if scope == "single" and occurrence_date is not None:
+        toast = f"{description}: ocorrência de {occurrence_date:%d/%m/%Y} atualizada."
+    elif scope == "future" and occurrence_date is not None:
+        toast = (
+            f"{description}: série atualizada a partir de {occurrence_date:%d/%m/%Y}."
+        )
+    else:
+        toast = t("msg_commitment_updated", lang=lang_code, desc=description)
     context = _get_dashboard_context(
         request,
         db,

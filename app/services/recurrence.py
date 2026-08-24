@@ -58,6 +58,19 @@ def _apply_adjustment(
             setattr(occurrence, field, value)
 
 
+def _monthly_occurrence_date(item: Commitment, target: date) -> date | None:
+    """Return this series' occurrence date in the target month, if it has started."""
+    month_start = target.replace(day=1)
+    month_end = month_start + relativedelta(months=1, days=-1)
+    if item.due_date > month_end:
+        return None
+    months = (
+        (target.year - item.due_date.year) * 12 + target.month - item.due_date.month
+    )
+    occurrence_date = item.due_date + relativedelta(months=max(0, months))
+    return occurrence_date if month_start <= occurrence_date <= month_end else None
+
+
 def resolve_upcoming_occurrences(
     commitments: Sequence[Commitment],
     from_date: date,
@@ -271,7 +284,12 @@ def calculate_suggested_monthly(
         if only_active and item.status != StatusEnum.PENDING:
             continue
 
-        current_adjustment = _adjustment_for(item, date.today())
+        adjustment_date = date.today()
+        if item.recurrence == RecurrenceEnum.MONTHLY:
+            adjustment_date = (
+                _monthly_occurrence_date(item, date.today()) or date.today()
+            )
+        current_adjustment = _adjustment_for(item, adjustment_date)
         if current_adjustment is not None and current_adjustment.is_deleted:
             continue
         amount = (
