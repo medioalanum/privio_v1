@@ -36,6 +36,10 @@
                 </label>
             </div>
 
+            <label title="{{ t('external_entry_account_help') }}">{{ t('destination_account') }} ⓘ
+                <select name="account_id" required>{% for account in accounts %}<option value="{{ account.id }}">{{ account.name }}</option>{% endfor %}</select>
+            </label>
+
             <label for="deposit-note">
                 {{ t('field_deposit_note') }}
                 <input 

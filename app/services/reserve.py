@@ -10,8 +10,11 @@ from sqlalchemy.orm import Session
 
 from app.models.commitment import Commitment, StatusEnum
 from app.models.deposit import Deposit
+from app.models.financial_account import AccountTransfer, FinancialAccount
 from app.models.payment import Payment
 from app.schemas.deposit import (
+    AccountBalanceResponse,
+    FinancialPositionResponse,
     MonthlyCashFlowResponse,
     MonthlyForecastResponse,
     ReserveBalanceResponse,
@@ -135,6 +138,72 @@ def calculate_cash_flow_forecast(
             )
         )
     return rows
+
+
+def calculate_financial_position(
+    db: Session,
+    commitments: Sequence[Commitment],
+    start_month: date,
+) -> FinancialPositionResponse:
+    """Calculate where money is held and what remains free after 12 months."""
+    accounts = db.scalars(
+        select(FinancialAccount)
+        .where(FinancialAccount.is_active.is_(True))
+        .order_by(FinancialAccount.id)
+    ).all()
+    default_account = next(
+        (account for account in accounts if account.account_type == "allocation"), None
+    )
+    deposits = db.scalars(select(Deposit)).all()
+    payments = db.scalars(select(Payment)).all()
+    transfers = db.scalars(select(AccountTransfer)).all()
+
+    balances: dict[int, Decimal] = {
+        account.id: Decimal(account.opening_balance) for account in accounts
+    }
+    for deposit in deposits:
+        account_id = deposit.account_id or (
+            default_account.id if default_account is not None else None
+        )
+        if account_id in balances:
+            balances[account_id] += Decimal(deposit.amount)
+    for payment in payments:
+        account_id = payment.account_id or (
+            default_account.id if default_account is not None else None
+        )
+        if account_id in balances:
+            balances[account_id] -= Decimal(payment.paid_amount)
+    for transfer in transfers:
+        if transfer.from_account_id in balances:
+            balances[transfer.from_account_id] -= Decimal(transfer.amount)
+        if transfer.to_account_id in balances:
+            balances[transfer.to_account_id] += Decimal(transfer.amount)
+
+    account_rows = [
+        AccountBalanceResponse(
+            id=account.id,
+            name=account.name,
+            account_type=account.account_type,
+            responsible=account.responsible,
+            currency=account.currency,
+            balance=_quantize_currency(balances[account.id]),
+            notes=account.notes,
+        )
+        for account in accounts
+    ]
+    total_resources = _quantize_currency(
+        sum((row.balance for row in account_rows), start=Decimal("0.00"))
+    )
+    forecast = calculate_cash_flow_forecast(db, commitments, start_month, months=12)
+    obligations = _quantize_currency(
+        sum((row.pending for row in forecast), start=Decimal("0.00"))
+    )
+    return FinancialPositionResponse(
+        total_resources=total_resources,
+        obligations=obligations,
+        free_to_spend=_quantize_currency(total_resources - obligations),
+        accounts=account_rows,
+    )
 
 
 def calculate_reserve_balance(db: Session) -> ReserveBalanceResponse:

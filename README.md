@@ -20,6 +20,12 @@ commitment projections, per-occurrence adjustments, and deposit tracking.
   optional notes.
 - Exact 12-month forecast with full semiannual and annual bills in their due
   months instead of monthly averages.
+- Freely named financial accounts and wallets, including bank accounts,
+  prepaid cards, cash, and money managed by third parties.
+- External inflows increase total resources, while internal transfers only
+  redistribute money and never duplicate the total.
+- Payments are linked to the account that funded them, enabling an accurate
+  total-resources and free-to-spend position.
 - Portuguese, English, and Italian dashboard translations.
 - Server-rendered UI with Jinja2, HTMX, and Pico.css.
 - OpenAPI documentation through FastAPI Swagger UI and ReDoc.

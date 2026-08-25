@@ -1,0 +1,18 @@
+<div class="modal-backdrop" onclick="if(event.target === this) closeModal()">
+    <article class="modal-content">
+        <header><h4 title="{{ t('account_form_help') }}">{{ t('account_form_title') }} ⓘ</h4></header>
+        <p class="metric-sub">{{ t('account_form_help') }}</p>
+        <form hx-post="/ui/accounts?lang={{ lang }}&month={{ selected_month_key }}" hx-target="#dashboard-content" hx-swap="innerHTML" hx-on::after-request="if(event.detail.successful) closeModal()">
+            <label title="{{ t('account_name_help') }}">{{ t('account_name') }} ⓘ<input name="name" required maxlength="120" placeholder="{{ t('account_name_placeholder') }}"></label>
+            <div class="grid">
+                <label title="{{ t('account_type_help') }}">{{ t('account_type') }} ⓘ
+                    <select name="account_type"><option value="bank">{{ t('account_type_bank') }}</option><option value="prepaid">{{ t('account_type_prepaid') }}</option><option value="third_party">{{ t('account_type_third_party') }}</option><option value="cash">{{ t('account_type_cash') }}</option><option value="other">{{ t('account_type_other') }}</option></select>
+                </label>
+                <label title="{{ t('account_responsible_help') }}">{{ t('account_responsible') }} ⓘ<input name="responsible" maxlength="120" placeholder="{{ t('account_responsible_placeholder') }}"></label>
+            </div>
+            <label title="{{ t('opening_balance_help') }}">{{ t('opening_balance') }} ⓘ<input type="number" name="opening_balance" value="0.00" step="0.01" min="0"></label>
+            <label>{{ t('field_payment_note') }}<input name="notes" maxlength="255"></label>
+            <footer><button type="button" class="secondary outline" onclick="closeModal()">{{ t('btn_cancel') }}</button><button type="submit">{{ t('btn_create_account') }}</button></footer>
+        </form>
+    </article>
+</div>

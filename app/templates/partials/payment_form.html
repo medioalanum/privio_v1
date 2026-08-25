@@ -19,6 +19,9 @@
                     <input type="number" name="paid_amount" value="{{ planned_amount }}" min="0.01" step="0.01" required>
                 </label>
             </div>
+            <label title="{{ t('payment_account_help') }}">{{ t('payment_account') }} ⓘ
+                <select name="account_id" required>{% for account in accounts %}<option value="{{ account.id }}">{{ account.name }}</option>{% endfor %}</select>
+            </label>
             <label>{{ t('field_payment_note') }}
                 <input type="text" name="note" maxlength="255" placeholder="{{ t('field_payment_note_placeholder') }}">
             </label>

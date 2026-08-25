@@ -1,0 +1,15 @@
+<div class="modal-backdrop" onclick="if(event.target === this) closeModal()">
+    <article class="modal-content">
+        <header><h4 title="{{ t('transfer_help') }}">{{ t('transfer_title') }} ⓘ</h4></header>
+        <p class="metric-sub">{{ t('transfer_help') }}</p>
+        <form hx-post="/ui/transfers?lang={{ lang }}&month={{ selected_month_key }}" hx-target="#dashboard-content" hx-swap="innerHTML" hx-on::after-request="if(event.detail.successful) closeModal()">
+            <div class="grid">
+                <label>{{ t('transfer_from') }}<select name="from_account_id" required>{% for account in accounts %}<option value="{{ account.id }}">{{ account.name }}</option>{% endfor %}</select></label>
+                <label>{{ t('transfer_to') }}<select name="to_account_id" required>{% for account in accounts %}<option value="{{ account.id }}">{{ account.name }}</option>{% endfor %}</select></label>
+            </div>
+            <div class="grid"><label>{{ t('field_amount') }}<input type="number" name="amount" min="0.01" step="0.01" required></label><label>{{ t('field_transfer_date') }}<input type="date" name="transfer_date" value="{{ today.isoformat() }}" required></label></div>
+            <label>{{ t('field_payment_note') }}<input name="note" maxlength="255"></label>
+            <footer><button type="button" class="secondary outline" onclick="closeModal()">{{ t('btn_cancel') }}</button><button type="submit">{{ t('btn_transfer') }}</button></footer>
+        </form>
+    </article>
+</div>

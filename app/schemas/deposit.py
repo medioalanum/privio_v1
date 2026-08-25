@@ -22,6 +22,9 @@ class DepositBase(BaseModel):
         max_length=255,
         description="Optional note or reference for the deposit",
     )
+    account_id: int | None = Field(
+        default=None, description="Destination financial account"
+    )
 
 
 class DepositCreate(DepositBase):
@@ -89,3 +92,24 @@ class MonthlyForecastResponse(BaseModel):
     pending: Decimal
     status: str
     notable_items: list[str]
+
+
+class AccountBalanceResponse(BaseModel):
+    """Calculated balance for one user-defined account or wallet."""
+
+    id: int
+    name: str
+    account_type: str
+    responsible: str | None
+    currency: str
+    balance: Decimal
+    notes: str | None
+
+
+class FinancialPositionResponse(BaseModel):
+    """Resources versus pending obligations for the forecast horizon."""
+
+    total_resources: Decimal
+    obligations: Decimal
+    free_to_spend: Decimal
+    accounts: list[AccountBalanceResponse]

@@ -44,7 +44,7 @@
                                 {% endif %}
                             </td>
                             <td><small>{{ effective.category if effective else c.category }}</small></td>
-                            <td><strong>R$ {{ "{:,.2f}".format(effective.amount if effective else c.amount) }}</strong></td>
+                            <td><strong>€ {{ "{:,.2f}".format(effective.amount if effective else c.amount) }}</strong></td>
                             <td>{{ (effective.occurrence_date if effective else c.due_date).strftime('%d/%m/%Y') }}</td>
                             <td>
                                 <span class="badge badge-recurrence">
