@@ -1,0 +1,9 @@
+<section class="metric-card">
+    <div style="display:flex; justify-content:space-between; gap:1rem; align-items:center; flex-wrap:wrap;">
+        <div><h3 title="{{ t('accounts_help') }}">{{ t('accounts_title') }} ⓘ</h3><small>{{ t('accounts_help') }}</small></div>
+        {% if user.role.value == 'editor' %}<div class="action-btns"><button hx-get="/ui/accounts/new?lang={{ lang }}&month={{ selected_month_key }}" hx-target="#modal-container" title="{{ t('btn_new_account_help') }}" aria-label="{{ t('btn_new_account') }}">＋</button><button class="secondary" hx-get="/ui/transfers/new?lang={{ lang }}&month={{ selected_month_key }}" hx-target="#modal-container" title="{{ t('transfer_help') }}" aria-label="{{ t('btn_transfer') }}">⇄</button></div>{% endif %}
+    </div>
+    <div class="overflow-auto"><table class="striped"><thead><tr><th title="{{ t('account_name_help') }}">{{ t('account_name') }} ⓘ</th><th title="{{ t('account_responsible_help') }}">{{ t('account_responsible') }} ⓘ</th><th title="{{ t('account_balance_help') }}">{{ t('account_balance') }} ⓘ</th></tr></thead><tbody>
+        {% for account in financial_position.accounts %}<tr><td><strong>{{ account.name }}</strong><br><small>{{ t('account_type_' + account.account_type) if account.account_type in ['bank','prepaid','third_party','cash','other'] else t('account_type_allocation') }}</small></td><td>{{ account.responsible or '—' }}</td><td><strong>€ {{ "{:,.2f}".format(account.balance) }}</strong></td></tr>{% endfor %}
+    </tbody></table></div>
+</section>

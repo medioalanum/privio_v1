@@ -1,10 +1,25 @@
 <div class="grid-cards" id="stats-cards">
+    <article class="metric-card" title="{{ t('resources_total_help') }}">
+        <header><small>💰 <strong>{{ t('resources_total_title') }}</strong> ⓘ</small></header>
+        <div class="metric-value">€ {{ "{:,.2f}".format(financial_position.total_resources) }}</div>
+        <div class="metric-sub">{{ t('resources_total_help') }}</div>
+    </article>
+    <article class="metric-card" title="{{ t('obligations_help') }}">
+        <header><small>📆 <strong>{{ t('obligations_title') }}</strong> ⓘ</small></header>
+        <div class="metric-value">€ {{ "{:,.2f}".format(financial_position.obligations) }}</div>
+        <div class="metric-sub">{{ t('obligations_help') }}</div>
+    </article>
+    <article class="metric-card" title="{{ t('free_to_spend_help') }}">
+        <header><small>✨ <strong>{{ t('free_to_spend_title') }}</strong> ⓘ</small></header>
+        <div class="metric-value" style="color:{% if financial_position.free_to_spend >= 0 %}#10b981{% else %}#ef4444{% endif %};">€ {{ "{:,.2f}".format(financial_position.free_to_spend) }}</div>
+        <div class="metric-sub">{{ t('free_to_spend_help') }}</div>
+    </article>
     <!-- Current-month cash flow -->
     <article class="metric-card">
         <header>
             <small>📥 <strong>{{ t('cash_received_title') }}</strong></small>
         </header>
-        <div class="metric-value">R$ {{ "{:,.2f}".format(cash_flow.received) }}</div>
+        <div class="metric-value">€ {{ "{:,.2f}".format(cash_flow.received) }}</div>
         <div class="metric-sub">{{ t('deposits_in_month', count=cash_flow.deposits_count) }}</div>
     </article>
 
@@ -12,31 +27,31 @@
         <header>
             <small>🧾 <strong>{{ t('cash_bills_title') }}</strong></small>
         </header>
-        <div class="metric-value">R$ {{ "{:,.2f}".format(cash_flow.bills_total) }}</div>
+        <div class="metric-value">€ {{ "{:,.2f}".format(cash_flow.bills_total) }}</div>
         <div class="metric-sub">{{ t('bills_in_month', count=cash_flow.bills_count) }}</div>
     </article>
 
     <article class="metric-card">
         <header><small>✅ <strong>{{ t('cash_paid_title') }}</strong></small></header>
-        <div class="metric-value" style="color: #10b981;">R$ {{ "{:,.2f}".format(cash_flow.paid) }}</div>
+        <div class="metric-value" style="color: #10b981;">€ {{ "{:,.2f}".format(cash_flow.paid) }}</div>
         <div class="metric-sub">{{ t('paid_in_month', count=cash_flow.paid_count) }}</div>
     </article>
 
     <article class="metric-card">
         <header><small>⏳ <strong>{{ t('cash_pending_title') }}</strong></small></header>
-        <div class="metric-value" style="color: {% if cash_flow.pending > 0 %}#f59e0b{% else %}#10b981{% endif %};">R$ {{ "{:,.2f}".format(cash_flow.pending) }}</div>
+        <div class="metric-value" style="color: {% if cash_flow.pending > 0 %}#f59e0b{% else %}#10b981{% endif %};">€ {{ "{:,.2f}".format(cash_flow.pending) }}</div>
         <div class="metric-sub">{{ t('pending_in_month', count=cash_flow.pending_count) }}</div>
     </article>
 
     <article class="metric-card">
         <header><small>💵 <strong>{{ t('cash_available_title') }}</strong></small></header>
-        <div class="metric-value" style="color: {% if cash_flow.available_now >= 0 %}#10b981{% else %}#ef4444{% endif %};">R$ {{ "{:,.2f}".format(cash_flow.available_now) }}</div>
+        <div class="metric-value" style="color: {% if cash_flow.available_now >= 0 %}#10b981{% else %}#ef4444{% endif %};">€ {{ "{:,.2f}".format(cash_flow.available_now) }}</div>
         <div class="metric-sub">{{ t('cash_available_help') }}</div>
     </article>
 
     <article class="metric-card">
         <header><small>📉 <strong>{{ t('cash_projected_title') }}</strong></small></header>
-        <div class="metric-value" style="color: {% if cash_flow.projected_balance >= 0 %}#10b981{% else %}#ef4444{% endif %};">R$ {{ "{:,.2f}".format(cash_flow.projected_balance) }}</div>
+        <div class="metric-value" style="color: {% if cash_flow.projected_balance >= 0 %}#10b981{% else %}#ef4444{% endif %};">€ {{ "{:,.2f}".format(cash_flow.projected_balance) }}</div>
         <div class="metric-sub">
             {% if cash_flow.projected_balance < 0 %}
                 {{ t('cash_shortfall', amount="{:,.2f}".format(-cash_flow.projected_balance)) }}
@@ -58,6 +73,7 @@
                     hx-get="/ui/commitments/new?lang={{ lang }}&month={{ selected_month_key }}"
                     hx-target="#modal-container" 
                     hx-swap="innerHTML"
+                    title="{{ t('new_commitment_help') }}"
                     style="margin-bottom: 0;">
                     {{ t('new_commitment_btn') }}
                 </button>
@@ -66,6 +82,7 @@
                     hx-get="/ui/deposits/new?lang={{ lang }}&month={{ selected_month_key }}"
                     hx-target="#modal-container" 
                     hx-swap="innerHTML"
+                    title="{{ t('external_entry_account_help') }}"
                     style="margin-bottom: 0;">
                     {{ t('new_deposit_btn') }}
                 </button>

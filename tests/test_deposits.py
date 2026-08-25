@@ -8,8 +8,10 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models.commitment import Commitment
+from app.models.financial_account import FinancialAccount
 from app.services.reserve import (
     calculate_cash_flow_forecast,
+    calculate_financial_position,
     calculate_monthly_cash_flow,
 )
 
@@ -306,3 +308,91 @@ def test_twelve_month_forecast_uses_full_due_amounts(
     ]
     assert rows[2].notable_items == ["Annual tax"]
     assert rows[3].notable_items == ["Semiannual insurance"]
+
+
+def test_accounts_transfers_and_payment_source_preserve_total(
+    client: TestClient, db_session: Session
+) -> None:
+    """Internal transfers preserve total resources; payments reduce one account."""
+    for name, account_type in (
+        ("Recursos a distribuir", "allocation"),
+        ("Banco BPER", "bank"),
+        ("Banco Intesa", "bank"),
+    ):
+        response = client.post(
+            "/ui/accounts?month=2026-08",
+            data={
+                "name": name,
+                "account_type": account_type,
+                "responsible": "Alan",
+                "opening_balance": "0.00",
+            },
+        )
+        assert response.status_code == 200
+
+    accounts = {
+        account.name: account
+        for account in db_session.scalars(select(FinancialAccount)).all()
+    }
+    client.post(
+        "/deposits",
+        json={
+            "amount": "50000.00",
+            "date": "2026-08-01",
+            "account_id": accounts["Recursos a distribuir"].id,
+        },
+    )
+    for destination, amount in (
+        ("Banco BPER", "30000.00"),
+        ("Banco Intesa", "10000.00"),
+    ):
+        response = client.post(
+            "/ui/transfers?month=2026-08",
+            data={
+                "from_account_id": str(accounts["Recursos a distribuir"].id),
+                "to_account_id": str(accounts[destination].id),
+                "amount": amount,
+                "transfer_date": "2026-08-02",
+            },
+        )
+        assert response.status_code == 200
+
+    position = calculate_financial_position(db_session, [], date(2026, 8, 1))
+    balances = {account.name: account.balance for account in position.accounts}
+    assert position.total_resources == Decimal("50000.00")
+    assert balances == {
+        "Recursos a distribuir": Decimal("10000.00"),
+        "Banco BPER": Decimal("30000.00"),
+        "Banco Intesa": Decimal("10000.00"),
+    }
+
+    bill = client.post(
+        "/commitments",
+        json={
+            "description": "School",
+            "amount": "440.00",
+            "due_date": "2026-08-15",
+            "category": "Education",
+        },
+    ).json()
+    payment = client.post(
+        "/ui/payments?month=2026-08",
+        data={
+            "commitment_id": str(bill["id"]),
+            "occurrence_date": "2026-08-15",
+            "payment_date": "2026-08-24",
+            "planned_amount": "440.00",
+            "paid_amount": "440.00",
+            "account_id": str(accounts["Banco BPER"].id),
+        },
+    )
+    assert payment.status_code == 200
+    commitments = db_session.scalars(select(Commitment)).all()
+    after_payment = calculate_financial_position(
+        db_session, commitments, date(2026, 8, 1)
+    )
+    after_balances = {
+        account.name: account.balance for account in after_payment.accounts
+    }
+    assert after_payment.total_resources == Decimal("49560.00")
+    assert after_balances["Banco BPER"] == Decimal("29560.00")

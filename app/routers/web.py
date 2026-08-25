@@ -40,10 +40,12 @@ from app.models.commitment import (
     StatusEnum,
 )
 from app.models.deposit import Deposit
+from app.models.financial_account import AccountTransfer, FinancialAccount
 from app.models.payment import Payment
 from app.services.recurrence import resolve_upcoming_occurrences
 from app.services.reserve import (
     calculate_cash_flow_forecast,
+    calculate_financial_position,
     calculate_monthly_cash_flow,
 )
 
@@ -140,6 +142,7 @@ def _get_dashboard_context(
     month_start = selected_month
     month_end = month_start + relativedelta(months=1, days=-1)
     cash_flow = calculate_monthly_cash_flow(db, commitments, month_start)
+    financial_position = calculate_financial_position(db, commitments, month_start)
     occurrences = resolve_upcoming_occurrences(
         commitments, from_date=month_start, days=(month_end - month_start).days
     )
@@ -185,6 +188,7 @@ def _get_dashboard_context(
         "t": lambda key, **kwargs: t(key, lang=lang_code, **kwargs),
         "translations": get_translations(lang_code),
         "cash_flow": cash_flow,
+        "financial_position": financial_position,
         "forecast": calculate_cash_flow_forecast(db, commitments, month_start),
         "payments_by_commitment": payments_by_commitment,
         "occurrences": occurrences,
@@ -515,6 +519,7 @@ def new_payment_form(
     commitment_id: int,
     occurrence_date: date,
     amount: Decimal,
+    db: Annotated[Session, Depends(get_db)],
     user: Annotated[AuthenticatedUser, Depends(require_editor_web)],
     lang: Annotated[str | None, Query()] = None,
 ) -> Response:
@@ -529,6 +534,11 @@ def new_payment_form(
             "commitment_id": commitment_id,
             "occurrence_date": occurrence_date,
             "planned_amount": amount,
+            "accounts": db.scalars(
+                select(FinancialAccount)
+                .where(FinancialAccount.is_active.is_(True))
+                .order_by(FinancialAccount.name)
+            ).all(),
             "today": date.today(),
             "lang": lang_code,
             "selected_month_key": _selected_month(request).strftime("%Y-%m"),
@@ -547,6 +557,7 @@ def save_payment(
     payment_date: Annotated[date, Form()],
     planned_amount: Annotated[Decimal, Form()],
     paid_amount: Annotated[Decimal, Form()],
+    account_id: Annotated[int, Form()] = 0,
     note: Annotated[str | None, Form()] = None,
     lang: Annotated[str | None, Query()] = None,
 ) -> Response:
@@ -573,6 +584,7 @@ def save_payment(
     payment.planned_amount = planned_amount
     payment.paid_amount = paid_amount
     payment.note = note or None
+    payment.account_id = account_id or None
 
     adjustment = db.scalar(
         select(CommitmentAdjustment).where(
@@ -748,6 +760,7 @@ def delete_commitment_occurrence(
 @router.get("/ui/deposits/new", response_class=HTMLResponse)
 def new_deposit_form(
     request: Request,
+    db: Annotated[Session, Depends(get_db)],
     user: Annotated[AuthenticatedUser, Depends(require_viewer_web)],
     lang: Annotated[str | None, Query()] = None,
 ) -> Response:
@@ -763,7 +776,155 @@ def new_deposit_form(
             "t": lambda key, **kwargs: t(key, lang=lang_code, **kwargs),
             "today": date.today(),
             "selected_month_key": _selected_month(request).strftime("%Y-%m"),
+            "accounts": db.scalars(
+                select(FinancialAccount)
+                .where(FinancialAccount.is_active.is_(True))
+                .order_by(FinancialAccount.name)
+            ).all(),
         },
+    )
+
+
+@router.get("/ui/accounts/new", response_class=HTMLResponse)
+def new_account_form(
+    request: Request,
+    user: Annotated[AuthenticatedUser, Depends(require_editor_web)],
+    lang: Annotated[str | None, Query()] = None,
+) -> Response:
+    """Render the account/wallet creation form."""
+    lang_code = normalize_lang(lang)
+    return templates.TemplateResponse(
+        request=request,
+        name="partials/account_form.html",
+        context={
+            "request": request,
+            "user": user,
+            "lang": lang_code,
+            "selected_month_key": _selected_month(request).strftime("%Y-%m"),
+            "t": lambda key, **kwargs: t(key, lang=lang_code, **kwargs),
+        },
+    )
+
+
+@router.post("/ui/accounts", response_class=HTMLResponse)
+def create_account(
+    request: Request,
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[AuthenticatedUser, Depends(require_editor_web)],
+    name: Annotated[str, Form()],
+    account_type: Annotated[str, Form()],
+    responsible: Annotated[str | None, Form()] = None,
+    opening_balance: Annotated[Decimal, Form()] = Decimal("0.00"),
+    notes: Annotated[str | None, Form()] = None,
+    lang: Annotated[str | None, Query()] = None,
+) -> Response:
+    """Create a freely named financial account or wallet."""
+    if db.scalar(select(FinancialAccount).where(FinancialAccount.name == name)):
+        raise HTTPException(status_code=409, detail="Account name already exists")
+    db.add(
+        FinancialAccount(
+            name=name,
+            account_type=account_type,
+            responsible=responsible or None,
+            currency="EUR",
+            opening_balance=opening_balance,
+            notes=notes or None,
+        )
+    )
+    db.commit()
+    lang_code = normalize_lang(lang)
+    context = _get_dashboard_context(
+        request,
+        db,
+        user=user,
+        lang=lang_code,
+        toast_message=t("msg_account_created", lang=lang_code, name=name),
+    )
+    return templates.TemplateResponse(
+        request=request, name="partials/dashboard_content.html", context=context
+    )
+
+
+@router.get("/ui/transfers/new", response_class=HTMLResponse)
+def new_transfer_form(
+    request: Request,
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[AuthenticatedUser, Depends(require_editor_web)],
+    lang: Annotated[str | None, Query()] = None,
+) -> Response:
+    """Render the internal transfer form."""
+    lang_code = normalize_lang(lang)
+    return templates.TemplateResponse(
+        request=request,
+        name="partials/transfer_form.html",
+        context={
+            "request": request,
+            "user": user,
+            "lang": lang_code,
+            "selected_month_key": _selected_month(request).strftime("%Y-%m"),
+            "today": date.today(),
+            "accounts": db.scalars(
+                select(FinancialAccount)
+                .where(FinancialAccount.is_active.is_(True))
+                .order_by(FinancialAccount.name)
+            ).all(),
+            "t": lambda key, **kwargs: t(key, lang=lang_code, **kwargs),
+        },
+    )
+
+
+@router.post("/ui/transfers", response_class=HTMLResponse)
+def create_transfer(
+    request: Request,
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[AuthenticatedUser, Depends(require_editor_web)],
+    from_account_id: Annotated[int, Form()],
+    to_account_id: Annotated[int, Form()],
+    amount: Annotated[Decimal, Form()],
+    transfer_date: Annotated[date, Form()],
+    note: Annotated[str | None, Form()] = None,
+    lang: Annotated[str | None, Query()] = None,
+) -> Response:
+    """Transfer resources without changing the total financial position."""
+    if from_account_id == to_account_id:
+        raise HTTPException(status_code=422, detail="Accounts must be different")
+    if amount <= 0:
+        raise HTTPException(status_code=422, detail="Amount must be positive")
+    accounts = db.scalars(
+        select(FinancialAccount).where(
+            FinancialAccount.id.in_([from_account_id, to_account_id])
+        )
+    ).all()
+    if len(accounts) != 2:
+        raise HTTPException(status_code=404, detail="Account not found")
+    current_position = calculate_financial_position(db, [], transfer_date)
+    source_balance = next(
+        account.balance
+        for account in current_position.accounts
+        if account.id == from_account_id
+    )
+    if amount > source_balance:
+        raise HTTPException(status_code=422, detail="Insufficient account balance")
+    db.add(
+        AccountTransfer(
+            from_account_id=from_account_id,
+            to_account_id=to_account_id,
+            amount=amount,
+            date=transfer_date,
+            note=note or None,
+        )
+    )
+    db.commit()
+    lang_code = normalize_lang(lang)
+    context = _get_dashboard_context(
+        request,
+        db,
+        user=user,
+        lang=lang_code,
+        toast_message=t("msg_transfer_created", lang=lang_code),
+    )
+    return templates.TemplateResponse(
+        request=request, name="partials/dashboard_content.html", context=context
     )
 
 
@@ -775,6 +936,7 @@ def create_deposit_form_action(
     amount: Annotated[Decimal, Form()],
     date_val: Annotated[date, Form(alias="date")],
     note: Annotated[str | None, Form()] = None,
+    account_id: Annotated[int, Form()] = 0,
     lang: Annotated[str | None, Query()] = None,
 ) -> Response:
     """Handle deposit submission from HTMX and return updated dashboard partial."""
@@ -783,6 +945,7 @@ def create_deposit_form_action(
         amount=amount,
         date=date_val,
         note=note if note else None,
+        account_id=account_id or None,
     )
     db.add(deposit)
     db.commit()

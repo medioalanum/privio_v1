@@ -34,8 +34,8 @@ def test_dashboard_page_render(client: TestClient) -> None:
     assert "Saldo Projetado" in response.text
     assert "Internet Fiber" in response.text
     assert (
-        "R$ 120.00" in response.text
-        or "R$ 120,00" in response.text
+        "€ 120.00" in response.text
+        or "€ 120,00" in response.text
         or "120.00" in response.text
     )
 
@@ -129,8 +129,8 @@ def test_payment_details_preserve_due_date_and_reopen(client: TestClient) -> Non
     )
     assert paid.status_code == 200
     assert "Pago em 24/08/2026" in paid.text
-    assert "Valor pago: R$ 390.00" in paid.text
-    assert "R$ 110.00" in paid.text
+    assert "Valor pago: € 390.00" in paid.text
+    assert "€ 110.00" in paid.text
     base = client.get(f"/commitments/{commitment['id']}").json()
     assert base["due_date"] == "2026-08-15"
 
@@ -139,7 +139,7 @@ def test_payment_details_preserve_due_date_and_reopen(client: TestClient) -> Non
     )
     assert reopened.status_code == 200
     assert "Vencimento reaberto como pendente" in reopened.text
-    assert "R$ 400.00" in reopened.text
+    assert "€ 400.00" in reopened.text
 
 
 def test_ui_upcoming_partial(client: TestClient) -> None:
@@ -277,7 +277,7 @@ def test_ui_deposit_form_and_creation_htmx(client: TestClient) -> None:
     """Test deposit modal and deposit creation via HTMX."""
     modal_res = client.get("/ui/deposits/new")
     assert modal_res.status_code == 200
-    assert "Registrar Depósito" in modal_res.text
+    assert "Registrar Entrada Externa" in modal_res.text
 
     deposit_data = {
         "amount": "1000.00",
@@ -287,7 +287,7 @@ def test_ui_deposit_form_and_creation_htmx(client: TestClient) -> None:
     create_res = client.post("/ui/deposits", data=deposit_data)
     assert create_res.status_code == 200
     assert (
-        "Depósito de R$ 1,000.00 registrado com sucesso" in create_res.text
+        "Entrada externa de € 1,000.00 registrada com sucesso" in create_res.text
         or "1,000.00" in create_res.text
     )
 

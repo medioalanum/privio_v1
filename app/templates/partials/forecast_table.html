@@ -8,7 +8,7 @@
                 {% for row in forecast %}
                     <tr>
                         <td><a href="/?lang={{ lang }}&month={{ row.month.strftime('%Y-%m') }}">{{ t('month_' + (row.month.month|string)) }} {{ row.month.year }}</a></td>
-                        <td><strong>R$ {{ "{:,.2f}".format(row.total) }}</strong></td>
+                        <td><strong>€ {{ "{:,.2f}".format(row.total) }}</strong></td>
                         <td><span class="badge {% if row.status == 'paid' %}badge-paid{% elif row.status == 'partial' %}badge-estimate{% else %}badge-pending{% endif %}">{{ t('forecast_status_' + row.status) }}</span></td>
                         <td>{% if row.notable_items %}{{ t('forecast_includes') }} {{ row.notable_items|join(', ') }}{% else %}—{% endif %}</td>
                     </tr>

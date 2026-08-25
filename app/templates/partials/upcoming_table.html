@@ -50,13 +50,13 @@
                                     {{ t('rec_' + item.recurrence.value) }}
                                 </span>
                             </td>
-                            <td><strong>R$ {{ "{:,.2f}".format(item.amount) }}</strong></td>
+                            <td><strong>€ {{ "{:,.2f}".format(item.amount) }}</strong></td>
                             <td>
                                 <span class="badge {% if item.status.value == 'paid' %}badge-paid{% else %}badge-pending{% endif %}">
                                     {{ t('status_' + item.status.value) }}
                                 </span>
                                 {% if payment %}
-                                    <small style="display: block; margin-top: .35rem;">{{ t('paid_on') }} {{ payment.payment_date.strftime('%d/%m/%Y') }}{% if payment.paid_amount != payment.planned_amount %}<br>{{ t('paid_amount_label') }} R$ {{ "{:,.2f}".format(payment.paid_amount) }}{% endif %}</small>
+                                    <small style="display: block; margin-top: .35rem;">{{ t('paid_on') }} {{ payment.payment_date.strftime('%d/%m/%Y') }}{% if payment.paid_amount != payment.planned_amount %}<br>{{ t('paid_amount_label') }} € {{ "{:,.2f}".format(payment.paid_amount) }}{% endif %}</small>
                                 {% endif %}
                             </td>
                             {% if user.role.value == 'editor' %}
