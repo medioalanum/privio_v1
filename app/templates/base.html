@@ -151,6 +151,16 @@
             #upcoming-section td { padding:.3rem; }
             #upcoming-section .action-btns { flex-wrap:wrap; }
  header nav, header nav ul { flex-wrap: wrap; } .metric-card { padding: .8rem; } .metric-value { font-size: 1.45rem; } }
+        .month-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        .month-cards .metric-card { margin: 0; }
+        .positive { color: #34d399; } .negative { color: #f87171; }
+        .month-alerts { margin: 0 0 1.5rem; } .month-alerts p { margin: .4rem 0; }
+        .notice { padding: .8rem 1rem; border-left: 3px solid var(--pico-primary); }
+        .action-btns { flex-wrap: wrap; }
+        .action-btns .payment-label { width: auto; flex: 0 1 auto; height: auto; padding: .5rem .7rem; white-space: normal; }
+        .secondary-actions { margin: 0; } .secondary-actions summary { font-size: .85rem; }
+        .filter-panel { margin: .5rem 0; }
+        @media(max-width:600px) { .month-cards {grid-template-columns:1fr;} .month-cards .metric-card {display:grid;grid-template-columns:1fr auto;gap:.25rem;} .month-cards .metric-card small:last-child {grid-column:1 / -1;} }
     </style>
 </head>
 <body>
