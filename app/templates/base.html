@@ -183,7 +183,7 @@
                     </div>
                 </li>
                 <li><a href="/?lang={{ lang }}{% if selected_month_key %}&month={{ selected_month_key }}{% endif %}" class="contrast">{{ t('dashboard') }}</a></li>
-                <li><a href="/docs" target="_blank" class="secondary">{{ t('swagger_api') }}</a></li>
+                {% if user and user.role.value == "editor" %}<li><a href="/docs" target="_blank" class="secondary">{{ t('swagger_api') }}</a></li>{% endif %}
                 <li>
                     <form action="/logout" method="post" style="margin: 0;">
                         <button type="submit" class="outline secondary" style="margin: 0; padding: .45rem .8rem;">{{ t('logout') }}</button>
