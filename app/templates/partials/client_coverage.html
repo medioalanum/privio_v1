@@ -1,0 +1,9 @@
+{% if decisions.coverage is not none %}
+<section class="metric-card" aria-labelledby="coverage-title">
+<h2 id="coverage-title">{{ t('coverage_title') }}</h2>
+<progress value="{{ decisions.coverage }}" max="100" aria-label="{{ t('coverage_title') }}">{{ decisions.coverage|round|int }}%</progress>
+<p><strong>{{ decisions.coverage|round|int }}%</strong> {{ t('coverage_note') }}</p>
+<p>{{ t('money_now') }}: {{ money(decisions.current) }} · {{ t('pending_list') }}: {{ money(decisions.due_total) }}</p>
+</section>
+{% endif %}
+<p class="metric-sub">{{ t('calculated_on') }} {{ today.strftime('%d/%m/%Y') }}</p>
