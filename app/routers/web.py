@@ -158,7 +158,11 @@ def _get_dashboard_context(
     decisions = decision_summary(db, commitments, month_start, today)
     accounts = [row["account"] for row in decisions["accounts"]]
     query = request.query_params
-    rows = decisions["rows"]
+    rows = (
+        decisions["rows"]
+        if query.get("status") == "paid"
+        else decisions["operational_rows"]
+    )
     categories = sorted({row["item"].category for row in rows})
     filtered = [
         row

@@ -21,8 +21,8 @@
 <!-- Upcoming Occurrences (30/60/90 days) -->
 {% include "partials/upcoming_table.html" %}
 
-{% include "partials/timeline.html" %}
-<details><summary>{{ t('accounts_title') }}</summary>{% include "partials/accounts_table.html" %}</details>
+<details><summary>{{ t("more_details") }} · {{ t("cash_projected_title") }}</summary>{% include "partials/timeline.html" %}</details>
+<details id="accounts-panel"><summary>{{ t('accounts_title') }}</summary>{% include "partials/accounts_table.html" %}</details>
 <details><summary>{{ t('forecast_title') }}</summary>{% include "partials/forecast_table.html" %}</details>
 
 <!-- Commitments Management Table -->
