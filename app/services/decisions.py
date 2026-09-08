@@ -219,7 +219,45 @@ def decision_summary(
                 ],
             }
         )
+    # The operational month includes older pending bills once, never paid history.
+    operational = sorted(
+        [r for r in rows if r["item"].occurrence_date <= end and r["pending"]]
+        if start <= today <= end
+        else month_rows,
+        key=lambda r: (r["item"].occurrence_date, r["item"].original_commitment_id),
+    )
+    due_total = sum((r["pending"] for r in operational), ZERO)
+    difference = (
+        current - due_total if current is not None and start <= today <= end else None
+    )
+    future_pending = [
+        r for r in rows if r["pending"] and r["item"].occurrence_date >= today
+    ]
+    next_day = min((r["item"].occurrence_date for r in future_pending), default=None)
+    next_group = [r for r in future_pending if r["item"].occurrence_date == next_day]
+    coverage = (
+        None
+        if difference is None or current is None
+        else (
+            Decimal(100)
+            if due_total == 0
+            else max(ZERO, min(Decimal(100), current / due_total * 100))
+        )
+    )
     return {
+        "month_end": end,
+        "operational_rows": operational,
+        "due_total": due_total,
+        "difference": difference,
+        "coverage": coverage,
+        "month_current": start <= today <= end,
+        "due_estimated": sum(
+            (r["pending"] for r in operational if r["nature"] == "estimated"), ZERO
+        ),
+        "next_day": next_day,
+        "next_count": len(next_group),
+        "next_amount": sum((r["pending"] for r in next_group), ZERO),
+        "expected_total": sum((i.amount for i in included_income), ZERO),
         "forecast": forecast,
         "graph": graph,
         "next_due": next_due,

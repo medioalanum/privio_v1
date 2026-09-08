@@ -67,7 +67,7 @@ def test_month_navigation_filters_and_survives_actions(client: TestClient) -> No
     assert "September only" in page.text
     assert (
         "August only"
-        not in page.text.split('id="upcoming-section"', 1)[1].split("</section>", 1)[0]
+        in page.text.split('id="upcoming-section"', 1)[1].split("</section>", 1)[0]
     )
     assert "month=2026-08" in page.text
     assert "month=2026-10" in page.text
@@ -353,7 +353,8 @@ def test_recurring_occurrence_edit_scopes_and_single_delete(
     assert "marcado como pago" in paid.text
     assert "School Pedro" in paid.text
     assert "Pago" in paid.text
-    assert 'aria-label="↩ Reabrir"' in paid.text
+    history = client.get("/?month=2026-08&status=paid")
+    assert 'aria-label="↩ Reabrir"' in history.text
     assert client.get(f"/commitments/{commitment_id}").json()["status"] == "pending"
 
     reopened = client.post(
