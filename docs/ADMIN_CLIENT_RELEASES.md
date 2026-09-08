@@ -40,13 +40,14 @@ Testes cobrem logins, sessões, Client sem operações, atrasados sem duplicaç�
 cobertura, previsão acumulada e preservação de todas as linhas após leituras e
 migração repetida. Nenhuma alteração de esquema nesta entrega.
 
-Bloqueios de publicação: restauração local PostgreSQL impedida pela sandbox
-(shmget: Operation not permitted); backup/restauração de produção ainda não
-verificados nesta execução. Main e Render não foram alterados.
+Backup recente restaurado em banco PostgreSQL isolado no mesmo provedor.
+Todas as tabelas conferidas por conteúdo; migração de cada uma das quatro fases
+executada duas vezes sem alterar registros. Manifesto e backup ficam privados,
+fora do Git. Cada publicação continua condicionada a comparar os registros
+pré/pós-release e confirmar saúde e SHA no Render.
 
 A prévia em 127.0.0.1:8039 usa SQLite e dados sintéticos, PREVIEW_MODE=true.
 As credenciais de demonstração são fornecidas separadamente e diferem do Render.
 Produção mantém as senhas EDITOR_PASS/VIEWER_PASS. A nova versão adiciona nomes
 admin/client e conserva os nomes configurados como aliases de transição.
 Não renomear/remover chaves de senha nem SESSION_SECRET durante este release.
-

@@ -198,7 +198,12 @@ def _get_dashboard_context(
         ]
     if query.get("sort") == "amount":
         filtered.sort(key=lambda row: row["pending"], reverse=True)
+    day_totals = {}
+    for row in filtered:
+        due = row["item"].occurrence_date
+        day_totals[due] = day_totals.get(due, Decimal("0.00")) + row["pending"]
     return {
+        "day_totals": day_totals,
         "preview_mode": settings.preview_mode,
         "decision_rows": filtered,
         "filtered_pending": sum((row["pending"] for row in filtered), Decimal("0.00")),

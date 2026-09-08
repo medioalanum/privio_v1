@@ -18,6 +18,10 @@ services:
         value: "Privio Commitments API"
       - key: DATABASE_URL
         sync: false  # Paste your Neon PostgreSQL connection string in Render Dashboard
+      - key: ADMIN_USER
+        value: admin
+      - key: CLIENT_USER
+        value: client
       - key: EDITOR_USER
         value: editor
       - key: EDITOR_PASS

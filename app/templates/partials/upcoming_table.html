@@ -38,9 +38,13 @@
             </thead>
             <tbody>
                 {% if decision_rows %}
+                    {% set grouping = namespace(day=none) %}
                     {% for row in decision_rows %}
                         {% set item = row.item %}
                         {% set payment = row.payment %}
+                        {% if request.query_params.get('sort') != 'amount' and grouping.day != item.occurrence_date %}
+                        <tr class="date-group"><th colspan="{{ 6 if user.role.value == 'editor' else 5 }}" scope="rowgroup">{{ item.occurrence_date.strftime('%d/%m/%Y') }} · {{ t('pending') }}: {{ money(day_totals[item.occurrence_date]) }}</th></tr>
+                        {% set grouping.day = item.occurrence_date %}{% endif %}
                         <tr>
                             <td><strong>{{ item.occurrence_date.strftime('%d/%m/%Y') }}</strong></td>
 
