@@ -1,0 +1,9 @@
+<section class="metric-card" id="cash-forecast" aria-labelledby="forecast-heading">
+<h2 id="forecast-heading">{{ t('future_view') }}</h2><p>{{ t('forecast_note') }}</p>
+{% if not decisions.forecast_income_present %}<p class="notice">{{ t('no_future_income') }}</p>{% endif %}
+{% if decisions.current is not none %}
+<figure><figcaption>{{ t('forecast_cash') }} · EUR</figcaption>
+{% for row in decisions.cash_months %}<div class="forecast-bar-row"><span>{{ t('month_' ~ row.month.month) }} {{ row.month.year }}</span><div class="forecast-track" aria-hidden="true"><span class="forecast-bar {{ 'loss' if row.closing < 0 else 'gain' }}" style="width:{{ row.width }}%;{{ 'right' if row.closing < 0 else 'left' }}:50%"></span></div><strong class="{{ 'negative' if row.closing < 0 else 'positive' }}">{{ money(row.closing) }}</strong></div>{% endfor %}
+</figure>{% else %}<p>{{ t('client_unknown') if user.role.value == 'viewer' else t('admin_unknown') }}</p>{% endif %}
+<details><summary>{{ t('more_details') }}</summary><div class="overflow-auto"><table><thead><tr><th>{{ t('month_navigation') }}</th><th>{{ t('opening_forecast') }}</th><th>{{ t('expected_income') }}</th><th>{{ t('pending') }}</th><th>{{ t('forecast_cash') }}</th></tr></thead><tbody>{% for row in decisions.cash_months %}<tr><td><a href="/?month={{ row.month.strftime('%Y-%m') }}&lang={{ lang }}">{{ t('month_' ~ row.month.month) }} {{ row.month.year }}</a></td><td>{{ money(row.opening) }}</td><td>{{ money(row.income) }}</td><td>{{ money(row.pending) }}</td><td>{{ money(row.closing) }}</td></tr>{% endfor %}</tbody></table></div></details>
+</section>

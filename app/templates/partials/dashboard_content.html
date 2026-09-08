@@ -31,6 +31,7 @@
 
 <details><summary>{{ t("more_details") }} · {{ t("cash_projected_title") }}</summary>{% include "partials/timeline.html" %}</details>
 {% if user.role.value == "editor" %}<details id="accounts-panel"><summary>{{ t('accounts_title') }}</summary>{% include "partials/accounts_table.html" %}</details>{% endif %}
+{% if user.role.value == "viewer" %}{% include "partials/cash_forecast.html" %}{% else %}<details><summary>{{ t("future_view") }}</summary>{% include "partials/cash_forecast.html" %}</details>{% endif %}
 <details><summary>{{ t('forecast_title') }}</summary>{% include "partials/forecast_table.html" %}</details>
 
 <!-- Commitments Management Table -->

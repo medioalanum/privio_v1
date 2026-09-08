@@ -79,3 +79,39 @@ def test_admin_keeps_operations(editor_client):
     assert "/ui/commitments/new" in page
     assert 'id="accounts-panel"' in page
     assert 'id="coverage-title"' not in page
+
+
+def test_forecast_carries_balance_and_arrears_once(db_session):
+    from app.models import ExpectedIncome
+
+    bank = FinancialAccount(
+        name="Bank", currency="EUR", opening_balance=100, account_type="bank"
+    )
+    db_session.add(bank)
+    db_session.flush()
+    old = add_bill(db_session, "10", 1)
+    old.due_date = date(2026, 8, 1)
+    add_bill(db_session, "20", 9)
+    later = add_bill(db_session, "40", 1)
+    later.due_date = date(2026, 10, 1)
+    db_session.add(
+        ExpectedIncome(
+            description="Future",
+            amount=50,
+            expected_date=date(2026, 10, 2),
+            account_id=bank.id,
+            nature="confirmed",
+        )
+    )
+    db_session.commit()
+    bills = list(db_session.scalars(select(Commitment)))
+    result = decision_summary(db_session, bills, TODAY, TODAY)
+    assert result["current"] == 100
+    first, second = result["cash_months"][:2]
+    assert first["pending"] == 30 and first["closing"] == 70
+    assert second["opening"] == 70 and second["closing"] == 80
+    assert second["pending"] == 40 and second["income"] == 50
+    assert (
+        decision_summary(db_session, bills, date(2025, 1, 1), TODAY)["cash_months"]
+        == result["cash_months"]
+    )
