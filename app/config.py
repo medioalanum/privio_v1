@@ -15,7 +15,10 @@ class Settings(BaseSettings):
     host: str = "0.0.0.0"
     port: int = 8000
 
-    # HTTP Basic Authentication Credentials
+    admin_user: str = "admin"
+    client_user: str = "client"
+
+    # Legacy credential keys retained to preserve deployed passwords.
     editor_user: str = "editor"
     editor_pass: str = "editor123"
     viewer_user: str = "viewer"
