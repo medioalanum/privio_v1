@@ -1,16 +1,12 @@
-<div class="grid-cards" id="stats-cards">
-{% for title, value, help in [('cash_pending_title', decisions.pending, selected_month_label), ('overdue_title', decisions.overdue, t('overdue_help')), ('seven_title', decisions.next_seven, today.strftime('%d/%m') ~ ' – ' ~ decisions.seven_end.strftime('%d/%m/%Y')), ('cash_projected_title', decisions.projected, selected_month_label)] %}
-<article class="metric-card"><small>{{ t(title) }}</small><div class="metric-value">{{ money(value) }}</div><div class="metric-sub">{{ help }}</div></article>
-{% endfor %}
+<div class="grid-cards month-cards" id="stats-cards">
+<article class="metric-card"><small>{{ t('pay_until') }} {{ decisions.month_end.strftime('%d/%m/%Y') }}</small><div class="metric-value">{{ money(decisions.due_total) }}</div><small>{{ t('includes_arrears') if decisions.month_current else selected_month_label }}</small></article>
+<article class="metric-card"><small>{{ t('money_now') }}</small><div class="metric-value">{{ money(decisions.current) }}</div><small>{{ today.strftime('%d/%m/%Y') }}</small></article>
+<article class="metric-card"><small>{{ t('surplus') if decisions.difference is not none and decisions.difference >= 0 else t('gap') }}</small><div class="metric-value {% if decisions.difference is not none %}{{ 'positive' if decisions.difference >= 0 else 'negative' }}{% endif %}">{{ money(decisions.difference|abs) if decisions.difference is not none else '—' }}</div><small>{{ t('with_cash') if decisions.month_current else t('past_projection') if decisions.past else t('forecast_note') }}</small></article>
 </div>
-<section class="metric-card" aria-labelledby="review-title">
-<h3 id="review-title">{{ t('review_title') }}</h3>
-<p>{{ t('projection_assumptions') }}</p><p>{{ t('expected_income') }}: {{ decisions.included_income | length }}</p>{% if not decisions.included_income %}<p>{{ t('no_future_income') }}</p>{% endif %}{% if decisions.overdue_income %}<p>{{ t('overdue_income') }}</p>{% endif %}
-{% if decisions.incomplete %}<p>{{ t('unknown_balance') }}</p>{% endif %}
-{% if decisions.past %}<p>{{ t('past_projection') }}</p>{% endif %}
-{% if decisions.first_negative %}<p><strong>{{ t('first_negative') }}: {{ decisions.first_negative.strftime('%d/%m/%Y') }}</strong></p>{% endif %}
-<p>{{ t('confirmed') }}: {{ money(decisions.confirmed) }} · {{ t('estimated') }}: {{ money(decisions.estimated) }} · {{ t('unclassified') }}: {{ money(decisions.unclassified) }}</p>
-<p>{{ t('review_dates') }} {{ decisions.unconfirmed_dates }}</p>
-{% if decisions.next_due %}<p>{{ t('next_due') }}: {{ decisions.next_due.item.occurrence_date.strftime('%d/%m/%Y') }} · {{ money(decisions.next_due.pending) }}</p>{% endif %}
-{% if decisions.concentration %}<p>{{ t('concentration') }}: {{ decisions.concentration.date.strftime('%d/%m/%Y') }} · {{ money(decisions.concentration.outflow) }}</p>{% endif %}
-</section>
+{% if decisions.current is none %}<p class="notice">{{ t('admin_unknown') if user.role.value == 'editor' else t('client_unknown') }} {% if user.role.value == 'editor' %}<a href="#accounts-panel" onclick="document.getElementById('accounts-panel').open=true">{{ t('review_balance') }}</a>{% endif %}</p>{% endif %}
+<div class="month-alerts">
+{% if decisions.month_current and decisions.overdue %}<p><strong class="negative">{{ t('overdue_title') }}: {{ money(decisions.overdue) }}</strong> · {{ t('includes_arrears') }}</p>{% endif %}
+{% if decisions.next_day and decisions.month_current %}<p>{{ t('next_due') }}: <strong>{{ decisions.next_day.strftime('%d/%m/%Y') }}</strong> · {{ decisions.next_count }} {{ t('payments_count') }} · <strong>{{ money(decisions.next_amount) }}</strong></p>{% endif %}
+{% if decisions.due_estimated %}<small>{{ t('estimate_part') }}: {{ money(decisions.due_estimated) }}</small>{% endif %}
+{% if decisions.expected_total %}<p>{{ t('expected_income') }}: {{ money(decisions.expected_total) }}</p>{% endif %}
+</div>

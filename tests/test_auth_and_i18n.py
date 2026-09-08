@@ -186,12 +186,12 @@ def test_i18n_dashboard_and_partials(viewer_client: TestClient) -> None:
     # 4. Partial upcoming table with i18n
     partial_en = viewer_client.get("/ui/upcoming?days=30&lang=en")
     assert partial_en.status_code == 200
-    assert "Bills This Month" in partial_en.text
+    assert "Remaining payments" in partial_en.text
     assert "Due Date" in partial_en.text
 
     partial_it = viewer_client.get("/ui/upcoming?days=60&lang=it")
     assert partial_it.status_code == 200
-    assert "Spese del Mese" in partial_it.text
+    assert "Cosa resta da pagare" in partial_it.text
     assert "Data Prevista" in partial_it.text
 
     # 5. Unsupported language falls back to Portuguese
