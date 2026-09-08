@@ -8,13 +8,18 @@ commitment projections, per-occurrence adjustments, and deposit tracking.
 ## Features
 
 - Branded browser login with secure, signed, HTTP-only session cookies.
-- Editor and viewer roles configured through environment variables.
+- **Admin** operational dashboard and **Client** read-only overview, with
+  canonical login names configured through environment variables.
 - Commitment recurrence: weekly, monthly, semiannual, and annual.
 - Edit a single occurrence, the selected occurrence and all future ones, or the
   entire recurring series.
 - Delete one occurrence or the complete recurring series.
-- Month-by-month cash flow with received, scheduled, paid, pending, available,
-  and projected amounts.
+- Three primary monthly indicators: remaining bills, money available now, and
+  the shortfall or surplus after paying. Current-month bills include older
+  unpaid occurrences once.
+- Next due-date totals, collapsible search and filters, and daily subtotals.
+- Client coverage bar and six-month rolling cash forecast, with text values
+  and a detailed table; unknown balances do not produce misleading charts.
 - Calendar-month navigation that is preserved across HTMX actions.
 - Actual payment records with separate due date, payment date, paid amount, and
   optional notes.
@@ -24,8 +29,8 @@ commitment projections, per-occurrence adjustments, and deposit tracking.
   prepaid cards, cash, and money managed by third parties.
 - External inflows increase total resources, while internal transfers only
   redistribute money and never duplicate the total.
-- Payments are linked to the account that funded them, enabling an accurate
-  current account balances.
+- Payments are linked to the account that funded them, enabling accurate
+  current account balances when account assignments and ledger data are complete.
 - Portuguese, English, and Italian dashboard translations.
 - Server-rendered UI with Jinja2, HTMX, and Pico.css.
 - OpenAPI documentation through FastAPI Swagger UI and ReDoc.
@@ -59,6 +64,7 @@ privio_v1/
 │   ├── database.py          # SQLAlchemy engine and session management
 │   ├── i18n.py              # Portuguese, English, and Italian translations
 │   └── main.py              # FastAPI application entry point
+├── docs/                    # Financial definitions, operations, and staged releases
 ├── scripts/                 # Quality checks and maintenance utilities
 ├── tests/                   # Unit and integration tests
 ├── .env.example             # Environment variable template
@@ -94,15 +100,24 @@ DEBUG=true
 HOST=0.0.0.0
 PORT=8000
 
+# Canonical login names
+ADMIN_USER=admin
+CLIENT_USER=client
+
+# Legacy aliases and password keys retained for compatibility
 EDITOR_USER=editor
 EDITOR_PASS=replace-with-a-strong-password
 VIEWER_USER=viewer
 VIEWER_PASS=replace-with-a-strong-password
 SESSION_SECRET=replace-with-a-long-random-value
+PREVIEW_MODE=false
 ```
 
 Never commit `.env`, production passwords, database connection strings, or the
-session secret.
+session secret. Use a separate development database and private development
+credentials; production credentials are not demo credentials. `PREVIEW_MODE=true`
+only adds a demonstration notice. It does not seed data, isolate a database,
+change permissions, or create credentials. Keep it disabled in production.
 
 ### 3. Install dependencies
 
@@ -110,9 +125,10 @@ session secret.
 uv sync --frozen --all-groups
 ```
 
-### 4. Start the development server
+### 4. Prepare the schema and start the development server
 
 ```bash
+uv run python -m scripts.migrate
 uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
@@ -123,8 +139,8 @@ Open the following pages:
 - Swagger UI: <http://localhost:8000/docs>
 - ReDoc: <http://localhost:8000/redoc>
 
-Run `uv run python -m scripts.migrate` before starting locally. Production uses
-`sh scripts/start.sh`, which runs the additive migration explicitly before serving.
+Production uses `sh scripts/start.sh`, which runs the additive migration
+explicitly before serving.
 Startup does not infer or create historical payments.
 
 ## Authentication and Roles
@@ -132,13 +148,120 @@ Startup does not infer or create historical payments.
 The browser UI uses a branded login page and a signed session cookie. The REST
 API also accepts HTTP Basic Auth for scripts and external clients.
 
-- **Editor:** read access plus creation, editing, status changes, and deletion.
-- **Viewer:** read-only access to the dashboard, commitments, projections, and
-  reserve balance. Mutation attempts return HTTP 403.
+| Profile | Canonical username | Password setting | Access |
+|---|---|---|---|
+| **Admin** | `ADMIN_USER` (default `admin`) | `EDITOR_PASS` | Read, create, edit, register payments and inflows, manage accounts and recurring rules |
+| **Client** | `CLIENT_USER` (default `client`) | `VIEWER_PASS` | Read-only overview and permitted data; mutations return HTTP 403 |
+
+On the browser login page, select **Admin** or **Client** and enter the
+corresponding password. Existing installations keep their previous Editor and
+Viewer passwords. There are no separate `ADMIN_PASS` or `CLIENT_PASS` settings.
+
+`EDITOR_USER` and `VIEWER_USER` remain accepted configured aliases. Internally,
+authorization and signed sessions retain the `editor` and `viewer` role values
+for compatibility. Renaming the visible profiles does not grant additional
+permissions or rewrite stored financial data. Preserve `SESSION_SECRET` during
+this transition to retain valid existing sessions.
 
 The session cookie is HTTP-only, uses `SameSite=Lax`, and is marked `Secure` in
 production. Passwords remain in environment variables and are never stored in
 the cookie.
+
+## Monthly Dashboards and Financial Definitions
+
+Both profiles use the same calculation service, [decisions.py](app/services/decisions.py).
+The current month is the default. Open the month label to choose another month,
+or use the previous/next controls; the selected month is kept across HTMX actions.
+
+### Three primary indicators
+
+| Indicator | Meaning |
+|---|---|
+| **To pay by month end** | For the current month, all remaining occurrences due through month end, including older unpaid bills exactly once |
+| **Money available now** | Active-account opening balances plus posted ledger movements through today; expected receipts are excluded |
+| **Still needed / Left after paying** | Current available money minus the remaining total; shown only for the current month when the balance is verifiable |
+
+When browsing a past or future month, the bills list uses that month's due dates,
+without rolling earlier unpaid bills into the primary total. The cash figure is
+still today's balance, not a reconstructed historical balance or a future opening
+balance; the shortfall/surplus card is therefore left unset outside the current
+month. Use the forecast for future cash positions.
+
+### Admin: operate the current month
+
+- Pending bills are ordered by due date and include earlier arrears in the
+  current-month view. The next due-date alert sums every pending occurrence on
+  that date instead of showing only the first bill.
+- Daily subtotals follow the filtered list when sorted by date. Amount sorting
+  presents a ranked list instead of date groups.
+- Search, status, category, amount classification, account, responsible person,
+  and sort controls are collapsible. Filters affect the list and its subtotal,
+  not the primary overall indicators. Account/responsible filters use recorded
+  payment assignments; unpaid items without a payment are unassigned.
+- Register a payment from the occurrence; access editing and other actions in
+  its details. Paid bills in the selected due-date month are available via
+  **View paid bills**. The system settles an occurrence with one payment record;
+  it does not implement cumulative partial payments.
+- Account management, recurring rules, and detailed cash flow are secondary
+  sections. Expected income is separate from actual deposits and can be
+  received once without counting both the expectation and deposit as cash.
+
+### Client: understand coverage and future needs
+
+- A short current-month summary explains whether current funds cover the bills.
+- A coverage bar compares available money with pending obligations, capped
+  between 0% and 100%. Coverage is not the percentage already paid. With a known
+  balance and no pending bills, coverage is 100%; any cash surplus remains visible.
+- Payment details are collapsed; account management and recurring-rule controls
+  are absent. Read-only restrictions also apply on the server.
+- The six-month forecast is visible in the overview. Admin can expand the same
+  forecast from a secondary section. Chart values are available as text and in
+  a detailed table, including when color alone is insufficient.
+- **Calculated on** indicates the date of calculation, not an independently
+  verified bank reconciliation or last update by the Admin.
+
+### Two different forecasts
+
+The **six-month cash forecast** always starts in the actual current month,
+independently of the month selected in the bills list. Its first opening value
+is today's known balance. Earlier pending bills enter the first forecast month
+once. Each closing balance becomes the following month's opening balance:
+
+```text
+Projected closing balance = opening balance + expected income - pending bills
+```
+
+Only unreceived, non-overdue expected income assigned to an active EUR account
+is included for its expected date. A notice identifies the absence of registered
+future income; that absence is not proof that no money will arrive. The dated
+cash-flow detail places overdue payments on today without changing their due
+dates. A month-end surplus alone does not prove that every earlier date is funded.
+
+The secondary **12-month payment schedule** starts in the selected month and
+shows full scheduled bills, including annual and semiannual amounts in their due
+months. It is an obligations schedule, not a forecast of free cash.
+
+### Estimates and unknown balances
+
+Estimates remain included and identified. Legacy values without an explicit
+review stay unclassified; they are not automatically confirmed. The estimate
+subtotal follows the same scope as the primary remaining-bills total.
+
+The balance and dependent projections stay unknown when there are no usable
+accounts, only an allocation account, unsupported currencies, movements that
+cannot be assigned to an active account, or legacy paid statuses without payment
+records. Consolidation currently supports EUR only; no implicit FX conversion is
+performed. Opening balances must be consistent with the posted ledger to avoid
+counting movements twice.
+
+Admin sees **Review balances** linking to the accounts section. Client sees that
+Admin review is needed. Opening this section does not reconcile data automatically.
+The application does not invent cash, dates, receipts, or historical payments to
+fill missing indicators.
+
+See [financial definitions and operations](docs/OPERATIONS.md) and the
+[Admin/Client staged release plan](docs/ADMIN_CLIENT_RELEASES.md).
+[MODERNIZATION.md](docs/MODERNIZATION.md) records the earlier baseline diagnosis.
 
 ## Recurring Commitment Changes
 
@@ -209,7 +332,18 @@ uv run ty check .
 uv run pytest
 ```
 
-Tests use an isolated in-memory SQLite database.
+By default, tests use isolated in-memory SQLite. The CI workflow also runs the
+suite against PostgreSQL 18, including the concurrent payment test skipped on
+SQLite. To test PostgreSQL locally, set `PRIVIO_TEST_DATABASE_URL` to an isolated,
+disposable database whose name starts with `privio_test_`, then run `uv run pytest`.
+The fixture creates and drops tables: never use production or a database holding
+records you need to retain.
+
+Tests cover authentication and legacy aliases, Client write restrictions,
+recurrences, monetary calculations, payment idempotency, month boundaries,
+coverage, rolling forecasts, and record preservation across dashboard reads and
+repeated migrations. See [.github/workflows/checks.yml](.github/workflows/checks.yml)
+for the current CI configuration.
 
 ## Production Deployment
 
@@ -221,28 +355,34 @@ compatible with Neon PostgreSQL.
 1. Create a Neon project and copy its pooled PostgreSQL connection string.
 2. Connect this repository to Render as a Blueprint.
 3. Set `DATABASE_URL` in the Render dashboard.
-4. Render generates editor, viewer, and session secrets from `render.yaml`.
+4. `render.yaml` configures `ADMIN_USER=admin` and `CLIENT_USER=client` and
+   retains the legacy aliases. On initial provisioning, Render generates the
+   secrets in `EDITOR_PASS`, `VIEWER_PASS`, and `SESSION_SECRET`. Preserve existing
+   secret values when upgrading; do not rename their keys or replace passwords
+   merely to change the visible profile names.
 5. Deploy and verify `/health`.
 
 The application normalizes standard `postgresql://` URLs for psycopg 3 and uses
 connection health checks suitable for serverless PostgreSQL.
 
-See [DEPLOYMENT.md](DEPLOYMENT.md) for the complete deployment guide.
+For an existing installation, the linked `main` branch auto-deploys. Treat merge
+as a release action: pass CI, validate the candidate, take a consistent backup,
+and prove restoration in an isolated database before a functional release.
+Compare preserved records before and after publication, confirm the deployed
+commit and `/health`, and monitor the service. Publish dependent phases one at a
+time. Tests passing alone do not prove that production data is recoverable.
+
+The Admin/Client releases do not change the database schema or rewrite stored
+records. The startup migration remains additive. Roll back compatible application
+code while preserving the live database; restoring an old backup automatically
+could erase subsequent legitimate records. Keep backups and manifests outside
+Git with restricted access.
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for hosting setup,
+[OPERATIONS.md](docs/OPERATIONS.md) for migration, backup, restore, and rollback
+procedures, and [ADMIN_CLIENT_RELEASES.md](docs/ADMIN_CLIENT_RELEASES.md) for the
+role-specific release sequence.
 
 ## License and Copyright
 
 Privio © 2026 — All rights reserved.
-
-## Monthly decision dashboard
-
-Four primary indicators show pending bills in the selected month, overdue bills
-across all months, the next seven days and projected month-end balance. Search,
-status/category/classification filters and amount sorting keep filtered totals
-separate from overall totals. A dated cash-flow table and chart explain the path
-to the projected balance. Accounts, annual schedule and recurring rules are secondary.
-
-Amounts remain unclassified until explicitly reviewed, except existing estimates.
-Expected income is separate from received deposits and can be received once.
-Unknown balances and unsupported currency consolidation are displayed as unknown.
-See [financial definitions and operations](docs/OPERATIONS.md) and
-[baseline diagnosis](docs/MODERNIZATION.md).
