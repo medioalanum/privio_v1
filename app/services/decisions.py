@@ -59,7 +59,9 @@ def decision_summary(
     transfers = list(db.scalars(select(AccountTransfer)))
     paid = {(p.commitment_id, p.occurrence_date): p for p in payments}
     first = min([c.due_date for c in commitments] + [start, today])
-    horizon = max(start + relativedelta(months=12, days=-1), today + timedelta(days=6))
+    horizon = max(
+        start + relativedelta(months=12, days=-1), today + relativedelta(months=6)
+    )
     occurrences = resolve_upcoming_occurrences(
         commitments, first, (horizon - first).days
     )
@@ -244,7 +246,55 @@ def decision_summary(
             else max(ZERO, min(Decimal(100), current / due_total * 100))
         )
     )
+    # Forecast rolls from today's actual balance, not a repeated monthly balance.
+    cash_months = []
+    forecast_start = today.replace(day=1)
+    rolling = current
+    eligible_accounts = {a.id for a in accounts if a.currency == "EUR"}
+    for offset in range(6):
+        period = forecast_start + relativedelta(months=offset)
+        stop = period + relativedelta(months=1)
+        outgoing = sum(
+            (
+                r["pending"]
+                for r in rows
+                if r["item"].occurrence_date < stop
+                and (offset == 0 or r["item"].occurrence_date >= period)
+            ),
+            ZERO,
+        )
+        incoming = sum(
+            (
+                i.amount
+                for i in incomes
+                if max(today, period) <= i.expected_date < stop
+                and i.account_id in eligible_accounts
+            ),
+            ZERO,
+        )
+        opening = rolling
+        if rolling is not None:
+            rolling += incoming - outgoing
+        cash_months.append(
+            {
+                "month": period,
+                "opening": opening,
+                "income": incoming,
+                "pending": outgoing,
+                "closing": rolling,
+            }
+        )
+    scale = max(
+        (abs(m["closing"]) for m in cash_months if m["closing"] is not None),
+        default=Decimal(1),
+    ) or Decimal(1)
+    for m in cash_months:
+        m["width"] = (
+            abs(m["closing"]) / scale * 50 if m["closing"] is not None else ZERO
+        )
     return {
+        "cash_months": cash_months,
+        "forecast_income_present": any(m["income"] for m in cash_months),
         "month_end": end,
         "operational_rows": operational,
         "due_total": due_total,

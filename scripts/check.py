@@ -26,6 +26,7 @@ def main() -> None:
     run_command(["ruff", "format", "--check", "."], "Ruff Format Check")
     run_command(["ty", "check", "."], "Astral ty Type Checker")
 
+    run_command([sys.executable, "-m", "pytest"], "Regression tests")
     print("\n All checks passed successfully!")
 
 
