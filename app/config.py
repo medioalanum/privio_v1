@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     host: str = "0.0.0.0"
     port: int = 8000
 
+    preview_mode: bool = False
     admin_user: str = "admin"
     client_user: str = "client"
 

@@ -79,3 +79,82 @@ def test_admin_keeps_operations(editor_client):
     assert "/ui/commitments/new" in page
     assert 'id="accounts-panel"' in page
     assert 'id="coverage-title"' not in page
+
+
+def test_forecast_carries_balance_and_arrears_once(db_session):
+    from app.models import ExpectedIncome
+
+    bank = FinancialAccount(
+        name="Bank", currency="EUR", opening_balance=100, account_type="bank"
+    )
+    db_session.add(bank)
+    db_session.flush()
+    old = add_bill(db_session, "10", 1)
+    old.due_date = date(2026, 8, 1)
+    add_bill(db_session, "20", 9)
+    later = add_bill(db_session, "40", 1)
+    later.due_date = date(2026, 10, 1)
+    db_session.add(
+        ExpectedIncome(
+            description="Future",
+            amount=50,
+            expected_date=date(2026, 10, 2),
+            account_id=bank.id,
+            nature="confirmed",
+        )
+    )
+    db_session.commit()
+    bills = list(db_session.scalars(select(Commitment)))
+    result = decision_summary(db_session, bills, TODAY, TODAY)
+    assert result["current"] == 100
+    first, second = result["cash_months"][:2]
+    assert first["pending"] == 30 and first["closing"] == 70
+    assert second["opening"] == 70 and second["closing"] == 80
+    assert second["pending"] == 40 and second["income"] == 50
+    assert (
+        decision_summary(db_session, bills, date(2025, 1, 1), TODAY)["cash_months"]
+        == result["cash_months"]
+    )
+
+
+def test_both_dashboards_preserve_all_database_rows(
+    editor_client, viewer_client, db_session
+):
+    from app.database import Base
+    from scripts.migrate import migrate
+
+    add_bill(db_session, "12.34", 5)
+    db_session.commit()
+
+    def snapshot():
+        return {
+            t.name: [tuple(row) for row in db_session.execute(select(t))]
+            for t in Base.metadata.sorted_tables
+        }
+
+    before = snapshot()
+    for client in [editor_client, viewer_client]:
+        for month in ["2026-08", "2026-09", "2026-10"]:
+            assert client.get("/", params={"month": month}).status_code == 200
+    migrate(db_session.get_bind())
+    migrate(db_session.get_bind())
+    assert snapshot() == before
+
+
+def test_grouped_pending_totals_are_visible(editor_client, db_session):
+    from datetime import date
+
+    today = date.today()
+    for amount in (10, 20):
+        db_session.add(
+            Commitment(
+                description="Grouped synthetic",
+                amount=amount,
+                due_date=today,
+                category="Test",
+            )
+        )
+    db_session.commit()
+    page = editor_client.get("/").text
+    assert 'class="date-group"' in page
+    assert "€ 30,00" in page

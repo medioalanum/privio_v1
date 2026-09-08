@@ -54,3 +54,9 @@ def test_browser_login_names(unauth_client, role, password, label):
     response = unauth_client.post("/login", data={"role": role, "password": password})
     assert response.status_code == 200
     assert f">{label}</span>" in response.text
+
+
+def test_demo_notice_is_opt_in(unauth_client, monkeypatch):
+    assert "Demonstração local" not in unauth_client.get("/login").text
+    monkeypatch.setattr(settings, "preview_mode", True)
+    assert "Demonstração local" in unauth_client.get("/login").text
