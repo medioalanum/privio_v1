@@ -18,4 +18,5 @@ echo "3. Running Astral ty Type Checker (ty check)..."
 uv run ty check .
 
 echo ""
+uv run pytest
 echo " All checks passed successfully!"
