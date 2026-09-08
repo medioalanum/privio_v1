@@ -32,4 +32,21 @@ Sem rolagem horizontal da página no celular, texto e cor para estados,
 ações nomeadas, teclado e valores de gráficos disponíveis em texto.
 
 ## Estado
-Planejamento criado; implementação e verificações serão registradas por fase.
+Implementação local em quatro fases, cada uma com branch release/admin-client-N.
+As fases 2–4 dependem da fase anterior. Não integrar todas de uma vez.
+
+Validação local: pytest, Ruff e ty; PostgreSQL concorrente requer CI/banco isolado.
+Testes cobrem logins, sessões, Client sem operações, atrasados sem duplicação,
+cobertura, previsão acumulada e preservação de todas as linhas após leituras e
+migração repetida. Nenhuma alteração de esquema nesta entrega.
+
+Bloqueios de publicação: restauração local PostgreSQL impedida pela sandbox
+(shmget: Operation not permitted); backup/restauração de produção ainda não
+verificados nesta execução. Main e Render não foram alterados.
+
+A prévia em 127.0.0.1:8039 usa SQLite e dados sintéticos, PREVIEW_MODE=true.
+As credenciais de demonstração são fornecidas separadamente e diferem do Render.
+Produção mantém as senhas EDITOR_PASS/VIEWER_PASS. A nova versão adiciona nomes
+admin/client e conserva os nomes configurados como aliases de transição.
+Não renomear/remover chaves de senha nem SESSION_SECRET durante este release.
+
