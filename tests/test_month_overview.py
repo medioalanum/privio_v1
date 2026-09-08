@@ -115,3 +115,27 @@ def test_forecast_carries_balance_and_arrears_once(db_session):
         decision_summary(db_session, bills, date(2025, 1, 1), TODAY)["cash_months"]
         == result["cash_months"]
     )
+
+
+def test_both_dashboards_preserve_all_database_rows(
+    editor_client, viewer_client, db_session
+):
+    from app.database import Base
+    from scripts.migrate import migrate
+
+    add_bill(db_session, "12.34", 5)
+    db_session.commit()
+
+    def snapshot():
+        return {
+            t.name: [tuple(row) for row in db_session.execute(select(t))]
+            for t in Base.metadata.sorted_tables
+        }
+
+    before = snapshot()
+    for client in [editor_client, viewer_client]:
+        for month in ["2026-08", "2026-09", "2026-10"]:
+            assert client.get("/", params={"month": month}).status_code == 200
+    migrate(db_session.get_bind())
+    migrate(db_session.get_bind())
+    assert snapshot() == before
