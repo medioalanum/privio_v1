@@ -139,3 +139,22 @@ def test_both_dashboards_preserve_all_database_rows(
     migrate(db_session.get_bind())
     migrate(db_session.get_bind())
     assert snapshot() == before
+
+
+def test_grouped_pending_totals_are_visible(editor_client, db_session):
+    from datetime import date
+
+    today = date.today()
+    for amount in (10, 20):
+        db_session.add(
+            Commitment(
+                description="Grouped synthetic",
+                amount=amount,
+                due_date=today,
+                category="Test",
+            )
+        )
+    db_session.commit()
+    page = editor_client.get("/").text
+    assert 'class="date-group"' in page
+    assert "€ 30,00" in page
