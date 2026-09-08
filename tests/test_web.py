@@ -40,8 +40,18 @@ def test_dashboard_page_render(client: TestClient) -> None:
     )
 
 
-def test_month_navigation_filters_and_survives_actions(client: TestClient) -> None:
+def test_month_navigation_filters_and_survives_actions(
+    client: TestClient, monkeypatch
+) -> None:
     """The selected month controls the dashboard and survives HTMX actions."""
+    from datetime import date as calendar_date
+
+    class FixedDate(calendar_date):
+        @classmethod
+        def today(cls):
+            return cls(2026, 9, 8)
+
+    monkeypatch.setattr("app.routers.web.date", FixedDate)
     client.post(
         "/commitments",
         json={
