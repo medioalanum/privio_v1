@@ -82,7 +82,12 @@ def login_page(request: Request, next_path: str = "/") -> Response:
     return templates.TemplateResponse(
         request=request,
         name="login.html",
-        context={"request": request, "error": None, "next_path": next_path},
+        context={
+            "request": request,
+            "error": None,
+            "next_path": next_path,
+            "preview_mode": settings.preview_mode,
+        },
     )
 
 
@@ -112,6 +117,7 @@ def login_action(
             name="login.html",
             context={
                 "request": request,
+                "preview_mode": settings.preview_mode,
                 "error": "Usuário ou senha incorretos.",
                 "next_path": safe_next,
             },
@@ -193,6 +199,7 @@ def _get_dashboard_context(
     if query.get("sort") == "amount":
         filtered.sort(key=lambda row: row["pending"], reverse=True)
     return {
+        "preview_mode": settings.preview_mode,
         "decision_rows": filtered,
         "filtered_pending": sum((row["pending"] for row in filtered), Decimal("0.00")),
         "categories": categories,

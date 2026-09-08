@@ -205,6 +205,7 @@
     </header>
 
     <main class="container">
+        {% if preview_mode %}<p class="notice" role="status">Ambiente de demonstração · dados fictícios · credenciais diferentes da produção.</p>{% endif %}
         <div id="toast-container" role="status" aria-live="polite"></div>
         {% block content %}{% endblock %}
     </main>
