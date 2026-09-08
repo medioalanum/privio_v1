@@ -28,8 +28,8 @@ def test_branded_login_and_session_flow(unauth_client: TestClient) -> None:
     assert page.status_code == 200
     assert "Bem-vindo de volta" in page.text
     assert 'name="role"' in page.text
-    assert 'value="editor"' in page.text
-    assert 'value="viewer"' in page.text
+    assert 'value="admin"' in page.text
+    assert 'value="client"' in page.text
 
     invalid = unauth_client.post("/login", data={"role": "editor", "password": "wrong"})
     assert invalid.status_code == 401
@@ -89,7 +89,7 @@ def test_auth_viewer_role_permissions(
         },
     )
     assert res_post.status_code == 403
-    assert "Editor role required" in res_post.json()["detail"]
+    assert "Admin role required" in res_post.json()["detail"]
 
     # Viewer CANNOT update commitment (403)
     res_put = viewer_client.put(
