@@ -7,9 +7,9 @@
 
 <nav class="month-navigation" aria-label="{{ t('month_navigation') }}">
     <a role="button" class="secondary outline" href="/?lang={{ lang }}&month={{ previous_month_key }}" aria-label="{{ t('previous_month') }}">‹</a>
-    <strong>{{ selected_month_label }}</strong>
+    <details class="month-picker"><summary>{{ selected_month_label }}</summary>
 <form action="/" method="get" class="month-form"><input type="hidden" name="lang" value="{{ lang }}"><label>{{ t('month_navigation') }}<input type="month" name="month" value="{{ selected_month_key }}" required></label><button type="submit">{{ t('apply') }}</button></form>
-<a href="/?lang={{ lang }}">{{ t('current_month') }}</a>
+<a href="/?lang={{ lang }}">{{ t('current_month') }}</a></details>
     <a role="button" class="secondary outline" href="/?lang={{ lang }}&month={{ next_month_key }}" aria-label="{{ t('next_month') }}">›</a>
 </nav>
 
