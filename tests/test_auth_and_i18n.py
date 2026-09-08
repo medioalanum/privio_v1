@@ -162,7 +162,7 @@ def test_i18n_dashboard_and_partials(viewer_client: TestClient) -> None:
     assert "Resultado realizado do mês" in res_pt.text
     assert "Saldo Projetado" in res_pt.text
     assert "Contas do Mês" in res_pt.text
-    assert "Regras das Contas" in res_pt.text
+    assert "Visão geral" in res_pt.text
     assert "Privio © 2026 — Todos os direitos reservados." in res_pt.text
 
     # 2. English
@@ -171,7 +171,7 @@ def test_i18n_dashboard_and_partials(viewer_client: TestClient) -> None:
     assert "Realized result this month" in res_en.text
     assert "Projected Balance" in res_en.text
     assert "Bills This Month" in res_en.text
-    assert "Bill Rules" in res_en.text
+    assert "Overview" in res_en.text
     assert "Privio © 2026 — All rights reserved." in res_en.text
 
     # 3. Italian
@@ -180,7 +180,7 @@ def test_i18n_dashboard_and_partials(viewer_client: TestClient) -> None:
     assert "Risultato effettivo del mese" in res_it.text
     assert "Saldo Previsto" in res_it.text
     assert "Spese del Mese" in res_it.text
-    assert "Regole delle Spese" in res_it.text
+    assert "Panoramica" in res_it.text
     assert "Privio © 2026 — Tutti i diritti riservati." in res_it.text
 
     # 4. Partial upcoming table with i18n

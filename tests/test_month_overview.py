@@ -54,3 +54,28 @@ def test_coverage_empty_negative_unknown_and_future(db_session):
     account.currency = "USD"
     db_session.commit()
     assert decision_summary(db_session, [bill], TODAY, TODAY)["coverage"] is None
+
+
+def test_client_overview_has_no_operations(viewer_client, db_session):
+    db_session.add(
+        FinancialAccount(
+            name="Synthetic", currency="EUR", opening_balance=100, account_type="bank"
+        )
+    )
+    db_session.commit()
+    page = viewer_client.get("/")
+    assert page.status_code == 200
+    assert 'id="coverage-title"' in page.text
+    assert 'max="100"' in page.text
+    assert "hx-post=" not in page.text
+    assert "hx-delete=" not in page.text
+    assert "/ui/commitments/new" not in page.text
+    assert 'id="accounts-panel"' not in page.text
+    assert 'href="/docs"' not in page.text
+
+
+def test_admin_keeps_operations(editor_client):
+    page = editor_client.get("/").text
+    assert "/ui/commitments/new" in page
+    assert 'id="accounts-panel"' in page
+    assert 'id="coverage-title"' not in page
