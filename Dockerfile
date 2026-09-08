@@ -14,6 +14,7 @@ RUN uv sync --frozen --no-install-project --no-dev
 
 # Copy application codebase
 COPY app/ ./app/
+COPY scripts/ ./scripts/
 COPY README.md ./
 
 # Add virtual environment to PATH
@@ -26,4 +27,4 @@ ENV PORT=8000
 EXPOSE 8000
 
 # Run FastAPI app with Uvicorn
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["sh", "scripts/start.sh"]

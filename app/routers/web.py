@@ -20,6 +20,7 @@ from fastapi import (
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import or_, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.auth import (
@@ -41,18 +42,27 @@ from app.models.commitment import (
 )
 from app.models.deposit import Deposit
 from app.models.financial_account import AccountTransfer, FinancialAccount
+from app.models.income import ExpectedIncome
 from app.models.payment import Payment
+from app.services.decisions import decision_summary
 from app.services.recurrence import resolve_upcoming_occurrences
 from app.services.reserve import (
-    calculate_cash_flow_forecast,
     calculate_financial_position,
-    calculate_monthly_cash_flow,
 )
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
 router = APIRouter(include_in_schema=False)
+
+
+def format_money(value: Decimal | None, lang: str = "pt") -> str:
+    if value is None:
+        return "—"
+    formatted = f"{value:,.2f}"
+    if lang in {"pt", "it"}:
+        formatted = formatted.translate(str.maketrans({",": ".", ".": ","}))
+    return f"€ {formatted}"
 
 
 def _selected_month(request: Request) -> date:
@@ -140,38 +150,46 @@ def _get_dashboard_context(
     ).all()
 
     month_start = selected_month
-    month_end = month_start + relativedelta(months=1, days=-1)
-    cash_flow = calculate_monthly_cash_flow(db, commitments, month_start)
-    financial_position = calculate_financial_position(db, commitments, month_start)
-    occurrences = resolve_upcoming_occurrences(
-        commitments, from_date=month_start, days=(month_end - month_start).days
-    )
-    payments = db.scalars(
-        select(Payment).where(
-            Payment.occurrence_date >= month_start,
-            Payment.occurrence_date <= month_end,
+    decisions = decision_summary(db, commitments, month_start, today)
+    accounts = [row["account"] for row in decisions["accounts"]]
+    query = request.query_params
+    rows = decisions["rows"]
+    categories = sorted({row["item"].category for row in rows})
+    filtered = [
+        row
+        for row in rows
+        if (
+            not query.get("q")
+            or query["q"].casefold()
+            in (row["item"].description + " " + row["item"].category).casefold()
         )
-    ).all()
-    payments_by_commitment: dict[int, dict[str, Payment]] = {}
-    for payment in payments:
-        payments_by_commitment.setdefault(payment.commitment_id, {})[
-            payment.occurrence_date.isoformat()
-        ] = payment
-    for occurrence in occurrences:
-        if occurrence.occurrence_date.isoformat() in payments_by_commitment.get(
-            occurrence.original_commitment_id, {}
-        ):
-            occurrence.status = StatusEnum.PAID
-        occurrence.days_until = (occurrence.occurrence_date - today).days
-    current_month_occurrences = {
-        occurrence.original_commitment_id: occurrence
-        for occurrence in occurrences
-        if occurrence.recurrence != RecurrenceEnum.WEEKLY
-        and occurrence.occurrence_date.year == selected_month.year
-        and occurrence.occurrence_date.month == selected_month.month
-    }
-
+        and (not query.get("status") or row["status"] == query["status"])
+        and (not query.get("nature") or row["nature"] == query["nature"])
+        and (not query.get("category") or row["item"].category == query["category"])
+    ]
+    if query.get("account"):
+        filtered = [
+            row
+            for row in filtered
+            if str(row["payment"].account_id if row["payment"] else "unassigned")
+            == query["account"]
+        ]
+    if query.get("responsible"):
+        owned = {a.id for a in accounts if a.responsible == query["responsible"]}
+        filtered = [
+            row
+            for row in filtered
+            if row["payment"] and row["payment"].account_id in owned
+        ]
+    if query.get("sort") == "amount":
+        filtered.sort(key=lambda row: row["pending"], reverse=True)
     return {
+        "decision_rows": filtered,
+        "filtered_pending": sum((row["pending"] for row in filtered), Decimal("0.00")),
+        "categories": categories,
+        "responsibles": sorted({a.responsible for a in accounts if a.responsible}),
+        "decisions": decisions,
+        "money": lambda value: format_money(value, lang_code),
         "request": request,
         "user": user,
         "today": today,
@@ -187,12 +205,8 @@ def _get_dashboard_context(
         "lang": lang_code,
         "t": lambda key, **kwargs: t(key, lang=lang_code, **kwargs),
         "translations": get_translations(lang_code),
-        "cash_flow": cash_flow,
-        "financial_position": financial_position,
-        "forecast": calculate_cash_flow_forecast(db, commitments, month_start),
-        "payments_by_commitment": payments_by_commitment,
-        "occurrences": occurrences,
-        "current_month_occurrences": current_month_occurrences,
+        "accounts": accounts,
+        "forecast": decisions["forecast"],
         "commitments": commitments,
         "toast_message": toast_message,
     }
@@ -224,30 +238,9 @@ def get_upcoming_partial(
     lang: Annotated[str | None, Query()] = None,
 ) -> Response:
     """Render the upcoming commitments partial table for 30/60/90 days."""
-    today = date.today()
-    lang_code = normalize_lang(lang)
-    commitments = db.scalars(select(Commitment)).all()
-    month_start = _selected_month(request)
-    month_end = month_start + relativedelta(months=1, days=-1)
-    occurrences = resolve_upcoming_occurrences(
-        commitments, from_date=month_start, days=(month_end - month_start).days
-    )
-    for occurrence in occurrences:
-        occurrence.days_until = (occurrence.occurrence_date - today).days
-
+    context = _get_dashboard_context(request, db, user, days, normalize_lang(lang))
     return templates.TemplateResponse(
-        request=request,
-        name="partials/upcoming_table.html",
-        context={
-            "request": request,
-            "user": user,
-            "occurrences": occurrences,
-            "days": days,
-            "lang": lang_code,
-            "t": lambda key, **kwargs: t(key, lang=lang_code, **kwargs),
-            "today": today,
-            "selected_month_key": month_start.strftime("%Y-%m"),
-        },
+        request=request, name="partials/upcoming_table.html", context=context
     )
 
 
@@ -281,6 +274,7 @@ def edit_commitment_form(
     db: Annotated[Session, Depends(get_db)],
     user: Annotated[AuthenticatedUser, Depends(require_viewer_web)],
     occurrence_date: Annotated[date | None, Query()] = None,
+    scope: Annotated[str, Query(pattern="^(single|series)$")] = "single",
     lang: Annotated[str | None, Query()] = None,
 ) -> Response:
     """Render the modal form for editing an existing commitment."""
@@ -290,6 +284,14 @@ def edit_commitment_form(
             status_code=status.HTTP_404_NOT_FOUND, detail="Commitment not found"
         )
 
+    displayed = (
+        next(iter(resolve_upcoming_occurrences([commitment], occurrence_date, 0)), None)
+        if occurrence_date and scope != "series"
+        else None
+    )
+    form_commitment = (
+        {**displayed.model_dump(), "id": commitment.id} if displayed else commitment
+    )
     lang_code = normalize_lang(lang)
     return templates.TemplateResponse(
         request=request,
@@ -297,7 +299,8 @@ def edit_commitment_form(
         context={
             "request": request,
             "user": user,
-            "commitment": commitment,
+            "edit_scope": scope,
+            "commitment": form_commitment,
             "occurrence_date": occurrence_date or commitment.due_date,
             "lang": lang_code,
             "t": lambda key, **kwargs: t(key, lang=lang_code, **kwargs),
@@ -313,7 +316,7 @@ def create_commitment_form_action(
     db: Annotated[Session, Depends(get_db)],
     user: Annotated[AuthenticatedUser, Depends(require_editor_web)],
     description: Annotated[str, Form()],
-    amount: Annotated[Decimal, Form()],
+    amount: Annotated[Decimal, Form(gt=0, decimal_places=2, max_digits=12)],
     due_date: Annotated[date, Form()],
     category: Annotated[str, Form()],
     recurrence: Annotated[RecurrenceEnum, Form()] = RecurrenceEnum.NONE,
@@ -358,13 +361,13 @@ def update_commitment_form_action(
     db: Annotated[Session, Depends(get_db)],
     user: Annotated[AuthenticatedUser, Depends(require_editor_web)],
     description: Annotated[str, Form()],
-    amount: Annotated[Decimal, Form()],
+    amount: Annotated[Decimal, Form(gt=0, decimal_places=2, max_digits=12)],
     due_date: Annotated[date, Form()],
     category: Annotated[str, Form()],
     recurrence: Annotated[RecurrenceEnum, Form()] = RecurrenceEnum.NONE,
     status_val: Annotated[StatusEnum, Form(alias="status")] = StatusEnum.PENDING,
     is_estimate: Annotated[bool, Form()] = False,
-    scope: Annotated[str, Form()] = "series",
+    scope: Annotated[str, Form(pattern="^(single|future|series)$")] = "series",
     occurrence_date: Annotated[date | None, Form()] = None,
     lang: Annotated[str | None, Query()] = None,
 ) -> Response:
@@ -555,22 +558,68 @@ def save_payment(
     commitment_id: Annotated[int, Form()],
     occurrence_date: Annotated[date, Form()],
     payment_date: Annotated[date, Form()],
-    planned_amount: Annotated[Decimal, Form()],
-    paid_amount: Annotated[Decimal, Form()],
+    planned_amount: Annotated[Decimal, Form(gt=0, decimal_places=2, max_digits=12)],
+    paid_amount: Annotated[Decimal, Form(gt=0, decimal_places=2, max_digits=12)],
     account_id: Annotated[int, Form()] = 0,
     note: Annotated[str | None, Form()] = None,
     lang: Annotated[str | None, Query()] = None,
 ) -> Response:
     """Create or update payment details without changing the scheduled due date."""
-    commitment = db.get(Commitment, commitment_id)
+    # Serialize writes on the series; the unique occurrence key is the final guard.
+    commitment = db.scalar(
+        select(Commitment).where(Commitment.id == commitment_id).with_for_update()
+    )
     if commitment is None:
         raise HTTPException(status_code=404, detail="Commitment not found")
+    if (
+        not paid_amount.is_finite()
+        or paid_amount <= 0
+        or paid_amount != paid_amount.quantize(Decimal("0.01"))
+    ):
+        raise HTTPException(status_code=422, detail="Invalid payment amount")
+    if payment_date > date.today():
+        raise HTTPException(
+            status_code=422, detail="Payment date must not be in the future"
+        )
+    occurrence = next(
+        iter(resolve_upcoming_occurrences([commitment], occurrence_date, 0)), None
+    )
+    if occurrence is None:
+        raise HTTPException(status_code=422, detail="Occurrence not found")
+    planned_amount = occurrence.amount
+    if account_id:
+        account = db.scalar(
+            select(FinancialAccount)
+            .where(FinancialAccount.id == account_id)
+            .with_for_update()
+        )
+        if account is None or not account.is_active or account.currency != "EUR":
+            raise HTTPException(status_code=422, detail="Select an active EUR account")
     payment = db.scalar(
         select(Payment).where(
             Payment.commitment_id == commitment_id,
             Payment.occurrence_date == occurrence_date,
         )
     )
+    if payment is not None:
+        identical = (
+            payment.payment_date == payment_date
+            and payment.paid_amount == paid_amount
+            and payment.account_id == (account_id or None)
+            and payment.note == (note or None)
+        )
+        if not identical:
+            raise HTTPException(
+                status_code=409,
+                detail="Payment already exists; reopen explicitly before changing it",
+            )
+        return templates.TemplateResponse(
+            request=request,
+            name="partials/dashboard_content.html",
+            context=_get_dashboard_context(
+                request, db, user, lang=normalize_lang(lang)
+            ),
+        )
     if payment is None:
         payment = Payment(
             commitment_id=commitment_id,
@@ -607,7 +656,13 @@ def save_payment(
     adjustment.is_deleted = False
     if commitment.recurrence != RecurrenceEnum.NONE:
         commitment.status = StatusEnum.PENDING
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=409, detail="Payment already recorded; refresh the dashboard"
+        ) from None
 
     lang_code = normalize_lang(lang)
     context = _get_dashboard_context(
@@ -880,22 +935,29 @@ def create_transfer(
     user: Annotated[AuthenticatedUser, Depends(require_editor_web)],
     from_account_id: Annotated[int, Form()],
     to_account_id: Annotated[int, Form()],
-    amount: Annotated[Decimal, Form()],
+    amount: Annotated[Decimal, Form(gt=0, decimal_places=2, max_digits=12)],
     transfer_date: Annotated[date, Form()],
     note: Annotated[str | None, Form()] = None,
     lang: Annotated[str | None, Query()] = None,
 ) -> Response:
     """Transfer resources without changing the total financial position."""
+    if transfer_date > date.today():
+        raise HTTPException(
+            status_code=422, detail="Transfer date cannot be in the future"
+        )
     if from_account_id == to_account_id:
         raise HTTPException(status_code=422, detail="Accounts must be different")
     if amount <= 0:
         raise HTTPException(status_code=422, detail="Amount must be positive")
     accounts = db.scalars(
-        select(FinancialAccount).where(
-            FinancialAccount.id.in_([from_account_id, to_account_id])
-        )
+        select(FinancialAccount)
+        .where(FinancialAccount.id.in_([from_account_id, to_account_id]))
+        .order_by(FinancialAccount.id)
+        .with_for_update()
     ).all()
-    if len(accounts) != 2:
+    if len(accounts) != 2 or any(
+        not account.is_active or account.currency != "EUR" for account in accounts
+    ):
         raise HTTPException(status_code=404, detail="Account not found")
     current_position = calculate_financial_position(db, [], transfer_date)
     source_balance = next(
@@ -933,14 +995,53 @@ def create_deposit_form_action(
     request: Request,
     db: Annotated[Session, Depends(get_db)],
     user: Annotated[AuthenticatedUser, Depends(require_editor_web)],
-    amount: Annotated[Decimal, Form()],
+    amount: Annotated[Decimal, Form(gt=0, decimal_places=2, max_digits=12)],
     date_val: Annotated[date, Form(alias="date")],
     note: Annotated[str | None, Form()] = None,
     account_id: Annotated[int, Form()] = 0,
+    expected: Annotated[bool, Form()] = False,
+    nature: Annotated[
+        str, Form(pattern="^(confirmed|estimated|unclassified)$")
+    ] = "unclassified",
     lang: Annotated[str | None, Query()] = None,
 ) -> Response:
     """Handle deposit submission from HTMX and return updated dashboard partial."""
     lang_code = normalize_lang(lang)
+    if (
+        not amount.is_finite()
+        or amount <= 0
+        or amount != amount.quantize(Decimal("0.01"))
+    ):
+        raise HTTPException(status_code=422, detail="Invalid amount")
+    if account_id:
+        account = db.get(FinancialAccount, account_id)
+        if account is None or not account.is_active or account.currency != "EUR":
+            raise HTTPException(status_code=422, detail="Select an active EUR account")
+    if expected:
+        if not account_id or date_val < date.today():
+            raise HTTPException(
+                status_code=422,
+                detail="Expected income needs an account and a future or current date",
+            )
+        db.add(
+            ExpectedIncome(
+                description=note or "Income",
+                amount=amount,
+                expected_date=date_val,
+                nature=nature,
+                account_id=account_id,
+            )
+        )
+        db.commit()
+        return templates.TemplateResponse(
+            request=request,
+            name="partials/dashboard_content.html",
+            context=_get_dashboard_context(request, db, user, lang=lang_code),
+        )
+    if date_val > date.today():
+        raise HTTPException(
+            status_code=422, detail="Use expected income for future dates"
+        )
     deposit = Deposit(
         amount=amount,
         date=date_val,
@@ -963,4 +1064,93 @@ def create_deposit_form_action(
         request=request,
         name="partials/dashboard_content.html",
         context=context,
+    )
+
+
+@router.post("/ui/reviews", response_class=HTMLResponse)
+def review_occurrence(
+    request: Request,
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[AuthenticatedUser, Depends(require_editor_web)],
+    commitment_id: Annotated[int, Form()],
+    occurrence_date: Annotated[date, Form()],
+    nature: Annotated[str, Form(pattern="^(confirmed|estimated|unclassified)$")],
+    date_confirmed: Annotated[bool, Form()] = False,
+    lang: Annotated[str | None, Query()] = None,
+) -> Response:
+    from app.models.review import OccurrenceReview
+
+    commitment = db.scalar(
+        select(Commitment).where(Commitment.id == commitment_id).with_for_update()
+    )
+    if commitment is None or not resolve_upcoming_occurrences(
+        [commitment], occurrence_date, 0
+    ):
+        raise HTTPException(status_code=404, detail="Occurrence not found")
+    review = db.scalar(
+        select(OccurrenceReview).where(
+            OccurrenceReview.commitment_id == commitment_id,
+            OccurrenceReview.occurrence_date == occurrence_date,
+        )
+    )
+    if review is None:
+        review = OccurrenceReview(
+            commitment_id=commitment_id, occurrence_date=occurrence_date
+        )
+        db.add(review)
+    review.reviewed_amount = resolve_upcoming_occurrences(
+        [commitment], occurrence_date, 0
+    )[0].amount
+    review.nature = nature
+    review.date_confirmed = date_confirmed
+    db.commit()
+    return templates.TemplateResponse(
+        request=request,
+        name="partials/dashboard_content.html",
+        context=_get_dashboard_context(request, db, user, lang=normalize_lang(lang)),
+    )
+
+
+@router.post("/ui/income/{income_id}/receive", response_class=HTMLResponse)
+def receive_income(
+    request: Request,
+    income_id: int,
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[AuthenticatedUser, Depends(require_editor_web)],
+    received_date: Annotated[date, Form()],
+    received_amount: Annotated[Decimal, Form(gt=0, decimal_places=2)],
+    lang: Annotated[str | None, Query()] = None,
+) -> Response:
+    income = db.scalar(
+        select(ExpectedIncome).where(ExpectedIncome.id == income_id).with_for_update()
+    )
+    if income is None:
+        raise HTTPException(status_code=404, detail="Expected income not found")
+    if received_date > date.today():
+        raise HTTPException(
+            status_code=422, detail="Receipt date cannot be in the future"
+        )
+    if income.deposit_id is None:
+        deposit = Deposit(
+            amount=received_amount,
+            date=received_date,
+            account_id=income.account_id,
+            note=income.description,
+        )
+        db.add(deposit)
+        db.flush()
+        income.deposit_id = deposit.id
+        db.commit()
+    else:
+        deposit = db.get(Deposit, income.deposit_id)
+        if (
+            deposit is None
+            or deposit.amount != received_amount
+            or deposit.date != received_date
+        ):
+            raise HTTPException(status_code=409, detail="Income already received")
+    return templates.TemplateResponse(
+        request=request,
+        name="partials/dashboard_content.html",
+        context=_get_dashboard_context(request, db, user, lang=normalize_lang(lang)),
     )

@@ -159,7 +159,7 @@ def test_i18n_dashboard_and_partials(viewer_client: TestClient) -> None:
     # 1. Portuguese (default)
     res_pt = viewer_client.get("/?lang=pt")
     assert res_pt.status_code == 200
-    assert "Recebido no Mês" in res_pt.text
+    assert "Resultado realizado do mês" in res_pt.text
     assert "Saldo Projetado" in res_pt.text
     assert "Contas do Mês" in res_pt.text
     assert "Regras das Contas" in res_pt.text
@@ -168,7 +168,7 @@ def test_i18n_dashboard_and_partials(viewer_client: TestClient) -> None:
     # 2. English
     res_en = viewer_client.get("/?lang=en")
     assert res_en.status_code == 200
-    assert "Received This Month" in res_en.text
+    assert "Realized result this month" in res_en.text
     assert "Projected Balance" in res_en.text
     assert "Bills This Month" in res_en.text
     assert "Bill Rules" in res_en.text
@@ -177,7 +177,7 @@ def test_i18n_dashboard_and_partials(viewer_client: TestClient) -> None:
     # 3. Italian
     res_it = viewer_client.get("/?lang=it")
     assert res_it.status_code == 200
-    assert "Ricevuto nel Mese" in res_it.text
+    assert "Risultato effettivo del mese" in res_it.text
     assert "Saldo Previsto" in res_it.text
     assert "Spese del Mese" in res_it.text
     assert "Regole delle Spese" in res_it.text
@@ -197,4 +197,4 @@ def test_i18n_dashboard_and_partials(viewer_client: TestClient) -> None:
     # 5. Unsupported language falls back to Portuguese
     res_fallback = viewer_client.get("/?lang=fr")
     assert res_fallback.status_code == 200
-    assert "Recebido no Mês" in res_fallback.text
+    assert "Resultado realizado do mês" in res_fallback.text

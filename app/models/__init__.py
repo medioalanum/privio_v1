@@ -8,7 +8,9 @@ from app.models.commitment import (
 )
 from app.models.deposit import Deposit
 from app.models.financial_account import AccountTransfer, FinancialAccount
+from app.models.income import ExpectedIncome
 from app.models.payment import Payment
+from app.models.review import OccurrenceReview
 
 __all__ = [
     "Commitment",
@@ -17,6 +19,8 @@ __all__ = [
     "FinancialAccount",
     "AccountTransfer",
     "Payment",
+    "ExpectedIncome",
+    "OccurrenceReview",
     "RecurrenceEnum",
     "StatusEnum",
 ]
