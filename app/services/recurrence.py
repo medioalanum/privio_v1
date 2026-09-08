@@ -94,8 +94,17 @@ def resolve_upcoming_occurrences(
     requested_to = from_date + timedelta(days=days)
     # Generate a small buffer so a dated exception can move an occurrence into
     # the requested window (for example, from the 15th to the 24th).
-    from_date = requested_from - timedelta(days=31)
-    to_date = requested_to + timedelta(days=31)
+    shift = max(
+        (
+            abs((a.adjusted_date - a.effective_date).days)
+            for c in commitments
+            for a in c.adjustments
+            if a.adjusted_date
+        ),
+        default=0,
+    )
+    from_date = requested_from - timedelta(days=max(31, shift))
+    to_date = requested_to + timedelta(days=max(31, shift))
     occurrences: list[CommitmentOccurrenceResponse] = []
 
     for item in commitments:

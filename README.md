@@ -25,7 +25,7 @@ commitment projections, per-occurrence adjustments, and deposit tracking.
 - External inflows increase total resources, while internal transfers only
   redistribute money and never duplicate the total.
 - Payments are linked to the account that funded them, enabling an accurate
-  total-resources and free-to-spend position.
+  current account balances.
 - Portuguese, English, and Italian dashboard translations.
 - Server-rendered UI with Jinja2, HTMX, and Pico.css.
 - OpenAPI documentation through FastAPI Swagger UI and ReDoc.
@@ -107,7 +107,7 @@ session secret.
 ### 3. Install dependencies
 
 ```bash
-uv sync --all-groups
+uv sync --frozen --all-groups
 ```
 
 ### 4. Start the development server
@@ -123,8 +123,9 @@ Open the following pages:
 - Swagger UI: <http://localhost:8000/docs>
 - ReDoc: <http://localhost:8000/redoc>
 
-Database tables are created during application startup with
-`Base.metadata.create_all()`.
+Run `uv run python -m scripts.migrate` before starting locally. Production uses
+`sh scripts/start.sh`, which runs the additive migration explicitly before serving.
+Startup does not infer or create historical payments.
 
 ## Authentication and Roles
 
@@ -231,3 +232,17 @@ See [DEPLOYMENT.md](DEPLOYMENT.md) for the complete deployment guide.
 ## License and Copyright
 
 Privio © 2026 — All rights reserved.
+
+## Monthly decision dashboard
+
+Four primary indicators show pending bills in the selected month, overdue bills
+across all months, the next seven days and projected month-end balance. Search,
+status/category/classification filters and amount sorting keep filtered totals
+separate from overall totals. A dated cash-flow table and chart explain the path
+to the projected balance. Accounts, annual schedule and recurring rules are secondary.
+
+Amounts remain unclassified until explicitly reviewed, except existing estimates.
+Expected income is separate from received deposits and can be received once.
+Unknown balances and unsupported currency consolidation are displayed as unknown.
+See [financial definitions and operations](docs/OPERATIONS.md) and
+[baseline diagnosis](docs/MODERNIZATION.md).

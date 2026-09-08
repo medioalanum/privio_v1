@@ -30,7 +30,7 @@ def test_dashboard_page_render(client: TestClient) -> None:
     assert response.status_code == 200
     assert "text/html" in response.headers["content-type"]
     assert "Privio" in response.text
-    assert "Recebido no Mês" in response.text
+    assert "Resultado realizado do mês" in response.text
     assert "Saldo Projetado" in response.text
     assert "Internet Fiber" in response.text
     assert (
@@ -129,8 +129,8 @@ def test_payment_details_preserve_due_date_and_reopen(client: TestClient) -> Non
     )
     assert paid.status_code == 200
     assert "Pago em 24/08/2026" in paid.text
-    assert "Valor pago: € 390.00" in paid.text
-    assert "€ 110.00" in paid.text
+    assert "Valor pago: € 390,00" in paid.text
+    assert "€ 110,00" in paid.text
     base = client.get(f"/commitments/{commitment['id']}").json()
     assert base["due_date"] == "2026-08-15"
 
@@ -294,8 +294,21 @@ def test_ui_deposit_form_and_creation_htmx(client: TestClient) -> None:
 
 def test_recurring_occurrence_edit_scopes_and_single_delete(
     client: TestClient,
+    monkeypatch,
 ) -> None:
     """Single and future edits must not overwrite the complete recurring series."""
+    from datetime import date
+
+    import app.routers.web as web
+    import app.services.recurrence as recurrence
+
+    class FixedDate(date):
+        @classmethod
+        def today(cls):
+            return cls(2026, 8, 24)
+
+    monkeypatch.setattr(web, "date", FixedDate)
+    monkeypatch.setattr(recurrence, "date", FixedDate)
     created = client.post(
         "/commitments",
         json={

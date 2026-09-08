@@ -611,3 +611,146 @@ def t(key: str, lang: str | None = None, **kwargs: object) -> str:
         except Exception:
             return template
     return template
+
+
+# Decision dashboard translations
+TRANSLATIONS["pt"].update(
+    {
+        "overdue_title": "Total vencido",
+        "overdue_help": "Todos os meses, antes de hoje",
+        "seven_title": "Próximos sete dias",
+        "current_month": "Mês atual",
+        "apply": "Aplicar",
+        "review_title": "Revise antes de decidir",
+        "projection_assumptions": "Projeção sem entradas futuras cadastradas. Vencidos entram hoje; os vencimentos originais são preservados. Inclui valores estimados e não classificados.",
+        "unknown_balance": "Saldo não verificável: revise contas, moedas e pagamentos sem dados completos.",
+        "past_projection": "Mês passado: resultado realizado disponível abaixo; saldo histórico não reconstruído.",
+        "first_negative": "Primeira data com saldo negativo",
+        "estimated": "Estimado",
+        "unclassified": "Não classificado",
+        "confirmed": "Confirmado",
+        "overdue": "Vencido",
+        "pending": "Pendente",
+        "paid": "Pago",
+        "cash_timeline": "Fluxo de caixa por data",
+        "realized": "Resultado realizado do mês",
+        "current_ledger": "Saldo atual — contas ativas em EUR",
+        "no_rows": "Nenhum vencimento neste período.",
+        "filter_search": "Buscar descrição ou categoria",
+        "all": "Todos",
+        "nature": "Natureza do valor",
+        "filtered_total": "Pendente filtrado",
+        "settled_planned": "Previsto liquidado",
+        "review_dates": "Datas previstas: confirmação ainda não registrada.",
+        "series_start": "Início da série",
+        "operation_error": "Não foi possível concluir. Confira os dados e tente novamente.",
+    }
+)
+TRANSLATIONS["en"].update(
+    {
+        "overdue_title": "Total overdue",
+        "overdue_help": "All months, before today",
+        "seven_title": "Next seven days",
+        "current_month": "Current month",
+        "apply": "Apply",
+        "review_title": "Review before deciding",
+        "projection_assumptions": "Projection with no scheduled future income. Overdue items are included today, preserving original due dates. Includes estimated and unclassified amounts.",
+        "unknown_balance": "Balance cannot be verified: review accounts, currencies and incomplete payments.",
+        "past_projection": "Past month: realized result below; historical balance not reconstructed.",
+        "first_negative": "First negative balance date",
+        "estimated": "Estimated",
+        "unclassified": "Unclassified",
+        "confirmed": "Confirmed",
+        "overdue": "Overdue",
+        "pending": "Pending",
+        "paid": "Paid",
+        "cash_timeline": "Cash flow by date",
+        "realized": "Realized result this month",
+        "current_ledger": "Current balance — active EUR accounts",
+        "no_rows": "No due items in this period.",
+        "filter_search": "Search description or category",
+        "all": "All",
+        "nature": "Amount classification",
+        "filtered_total": "Filtered pending",
+        "settled_planned": "Settled scheduled amount",
+        "review_dates": "Scheduled dates: confirmation not yet recorded.",
+        "series_start": "Series start",
+        "operation_error": "Unable to complete. Check the data and try again.",
+    }
+)
+TRANSLATIONS["it"].update(
+    {
+        "overdue_title": "Totale scaduto",
+        "overdue_help": "Tutti i mesi, prima di oggi",
+        "seven_title": "Prossimi sette giorni",
+        "current_month": "Mese corrente",
+        "apply": "Applica",
+        "review_title": "Verifica prima di decidere",
+        "projection_assumptions": "Proiezione senza entrate future registrate. Gli scaduti sono inclusi oggi, mantenendo le scadenze originali. Include importi stimati e non classificati.",
+        "unknown_balance": "Saldo non verificabile: controlla conti, valute e pagamenti incompleti.",
+        "past_projection": "Mese passato: risultato effettivo sotto; saldo storico non ricostruito.",
+        "first_negative": "Prima data con saldo negativo",
+        "estimated": "Stimato",
+        "unclassified": "Non classificato",
+        "confirmed": "Confermato",
+        "overdue": "Scaduto",
+        "pending": "Da pagare",
+        "paid": "Pagato",
+        "cash_timeline": "Flusso di cassa per data",
+        "realized": "Risultato effettivo del mese",
+        "current_ledger": "Saldo attuale — conti EUR attivi",
+        "no_rows": "Nessuna scadenza nel periodo.",
+        "filter_search": "Cerca descrizione o categoria",
+        "all": "Tutti",
+        "nature": "Classificazione importo",
+        "filtered_total": "Da pagare filtrato",
+        "settled_planned": "Importo previsto saldato",
+        "review_dates": "Date previste: conferma non ancora registrata.",
+        "series_start": "Inizio serie",
+        "operation_error": "Operazione non completata. Controlla i dati e riprova.",
+    }
+)
+
+for language, values in {
+    "pt": {
+        "expected_income": "Entrada prevista (ainda não recebida)",
+        "no_future_income": "Nenhuma entrada futura cadastrada neste horizonte.",
+        "overdue_income": "Há entradas previstas atrasadas. Excluídas da projeção até revisão.",
+        "projection_assumptions": "Saldo atual + entradas previstas − saídas pendentes. Vencidos entram hoje, preservando suas datas. Inclui valores estimados e não classificados.",
+    },
+    "en": {
+        "expected_income": "Expected income (not yet received)",
+        "no_future_income": "No future income registered in this horizon.",
+        "overdue_income": "Overdue expected income is excluded until reviewed.",
+        "projection_assumptions": "Current balance + expected income − pending outflows. Overdue bills enter today, preserving dates. Includes estimated and unclassified amounts.",
+    },
+    "it": {
+        "expected_income": "Entrata prevista (non ancora ricevuta)",
+        "no_future_income": "Nessuna entrata futura registrata in questo orizzonte.",
+        "overdue_income": "Entrate previste scadute escluse fino alla revisione.",
+        "projection_assumptions": "Saldo attuale + entrate previste − uscite da pagare. Gli scaduti entrano oggi mantenendo le date. Include importi stimati e non classificati.",
+    },
+}.items():
+    TRANSLATIONS[language].update(values)
+
+for language, values in {
+    "pt": {
+        "logout": "Sair",
+        "next_due": "Próximo vencimento",
+        "concentration": "Maior concentração de saídas",
+        "review_dates": "Datas aguardando confirmação:",
+    },
+    "en": {
+        "logout": "Sign out",
+        "next_due": "Next due date",
+        "concentration": "Largest daily outflow",
+        "review_dates": "Dates awaiting confirmation:",
+    },
+    "it": {
+        "logout": "Esci",
+        "next_due": "Prossima scadenza",
+        "concentration": "Massima uscita giornaliera",
+        "review_dates": "Date in attesa di conferma:",
+    },
+}.items():
+    TRANSLATIONS[language].update(values)
