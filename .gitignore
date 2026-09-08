@@ -26,3 +26,13 @@ uv.cache/
 htmlcov/
 .ruff_cache/
 .ty_cache/
+
+# Local data and backups
+.env.*
+!.env.example
+*.db
+*.sqlite*
+*.dump
+*.backup
+backups/
+work/

@@ -4,7 +4,7 @@
             <h4 style="margin-bottom: 0;">{{ t('payment_form_title') }}</h4>
             <button type="button" aria-label="Close" class="contrast outline" onclick="closeModal()" style="border: none; font-size: 1.5rem; line-height: 1; padding: 0;">&times;</button>
         </header>
-        <form hx-post="/ui/payments?lang={{ lang }}&month={{ selected_month_key }}" hx-target="#dashboard-content" hx-swap="innerHTML" hx-on::after-request="if(event.detail.successful) closeModal()" style="margin-top: 1rem;">
+        <form hx-disabled-elt="find button" hx-sync="this:drop" hx-post="/ui/payments?lang={{ lang }}&month={{ selected_month_key }}" hx-target="#dashboard-content" hx-swap="innerHTML" hx-on::after-request="if(event.detail.successful) closeModal()" style="margin-top: 1rem;">
             <input type="hidden" name="commitment_id" value="{{ commitment_id }}">
             <input type="hidden" name="occurrence_date" value="{{ occurrence_date.isoformat() }}">
             <input type="hidden" name="planned_amount" value="{{ planned_amount }}">

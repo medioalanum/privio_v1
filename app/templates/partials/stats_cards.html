@@ -1,96 +1,16 @@
 <div class="grid-cards" id="stats-cards">
-    <article class="metric-card" title="{{ t('resources_total_help') }}">
-        <header><small>💰 <strong>{{ t('resources_total_title') }}</strong> ⓘ</small></header>
-        <div class="metric-value">€ {{ "{:,.2f}".format(financial_position.total_resources) }}</div>
-        <div class="metric-sub">{{ t('resources_total_help') }}</div>
-    </article>
-    <article class="metric-card" title="{{ t('obligations_help') }}">
-        <header><small>📆 <strong>{{ t('obligations_title') }}</strong> ⓘ</small></header>
-        <div class="metric-value">€ {{ "{:,.2f}".format(financial_position.obligations) }}</div>
-        <div class="metric-sub">{{ t('obligations_help') }}</div>
-    </article>
-    <article class="metric-card" title="{{ t('free_to_spend_help') }}">
-        <header><small>✨ <strong>{{ t('free_to_spend_title') }}</strong> ⓘ</small></header>
-        <div class="metric-value" style="color:{% if financial_position.free_to_spend >= 0 %}#10b981{% else %}#ef4444{% endif %};">€ {{ "{:,.2f}".format(financial_position.free_to_spend) }}</div>
-        <div class="metric-sub">{{ t('free_to_spend_help') }}</div>
-    </article>
-    <!-- Current-month cash flow -->
-    <article class="metric-card">
-        <header>
-            <small>📥 <strong>{{ t('cash_received_title') }}</strong></small>
-        </header>
-        <div class="metric-value">€ {{ "{:,.2f}".format(cash_flow.received) }}</div>
-        <div class="metric-sub">{{ t('deposits_in_month', count=cash_flow.deposits_count) }}</div>
-    </article>
-
-    <article class="metric-card">
-        <header>
-            <small>🧾 <strong>{{ t('cash_bills_title') }}</strong></small>
-        </header>
-        <div class="metric-value">€ {{ "{:,.2f}".format(cash_flow.bills_total) }}</div>
-        <div class="metric-sub">{{ t('bills_in_month', count=cash_flow.bills_count) }}</div>
-    </article>
-
-    <article class="metric-card">
-        <header><small>✅ <strong>{{ t('cash_paid_title') }}</strong></small></header>
-        <div class="metric-value" style="color: #10b981;">€ {{ "{:,.2f}".format(cash_flow.paid) }}</div>
-        <div class="metric-sub">{{ t('paid_in_month', count=cash_flow.paid_count) }}</div>
-    </article>
-
-    <article class="metric-card">
-        <header><small>⏳ <strong>{{ t('cash_pending_title') }}</strong></small></header>
-        <div class="metric-value" style="color: {% if cash_flow.pending > 0 %}#f59e0b{% else %}#10b981{% endif %};">€ {{ "{:,.2f}".format(cash_flow.pending) }}</div>
-        <div class="metric-sub">{{ t('pending_in_month', count=cash_flow.pending_count) }}</div>
-    </article>
-
-    <article class="metric-card">
-        <header><small>💵 <strong>{{ t('cash_available_title') }}</strong></small></header>
-        <div class="metric-value" style="color: {% if cash_flow.available_now >= 0 %}#10b981{% else %}#ef4444{% endif %};">€ {{ "{:,.2f}".format(cash_flow.available_now) }}</div>
-        <div class="metric-sub">{{ t('cash_available_help') }}</div>
-    </article>
-
-    <article class="metric-card">
-        <header><small>📉 <strong>{{ t('cash_projected_title') }}</strong></small></header>
-        <div class="metric-value" style="color: {% if cash_flow.projected_balance >= 0 %}#10b981{% else %}#ef4444{% endif %};">€ {{ "{:,.2f}".format(cash_flow.projected_balance) }}</div>
-        <div class="metric-sub">
-            {% if cash_flow.projected_balance < 0 %}
-                {{ t('cash_shortfall', amount="{:,.2f}".format(-cash_flow.projected_balance)) }}
-            {% else %}
-                {{ t('cash_projected_help') }}
-            {% endif %}
-        </div>
-    </article>
-
-    <!-- Card 3: Ações Rápidas -->
-    <article class="metric-card">
-        <header>
-            <small>⚡ <strong>{{ t('quick_actions_title') }}</strong></small>
-        </header>
-        <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.5rem;">
-            {% if user.role.value == 'editor' %}
-                <button 
-                    class="primary"
-                    hx-get="/ui/commitments/new?lang={{ lang }}&month={{ selected_month_key }}"
-                    hx-target="#modal-container" 
-                    hx-swap="innerHTML"
-                    title="{{ t('new_commitment_help') }}"
-                    style="margin-bottom: 0;">
-                    {{ t('new_commitment_btn') }}
-                </button>
-                <button 
-                    class="secondary outline"
-                    hx-get="/ui/deposits/new?lang={{ lang }}&month={{ selected_month_key }}"
-                    hx-target="#modal-container" 
-                    hx-swap="innerHTML"
-                    title="{{ t('external_entry_account_help') }}"
-                    style="margin-bottom: 0;">
-                    {{ t('new_deposit_btn') }}
-                </button>
-            {% else %}
-                <div style="color: var(--pico-muted-color); font-size: 0.85rem; padding: 0.5rem 0;">
-                    <em>Modo visualização ativo (Viewer). Apenas leitura.</em>
-                </div>
-            {% endif %}
-        </div>
-    </article>
+{% for title, value, help in [('cash_pending_title', decisions.pending, selected_month_label), ('overdue_title', decisions.overdue, t('overdue_help')), ('seven_title', decisions.next_seven, today.strftime('%d/%m') ~ ' – ' ~ decisions.seven_end.strftime('%d/%m/%Y')), ('cash_projected_title', decisions.projected, selected_month_label)] %}
+<article class="metric-card"><small>{{ t(title) }}</small><div class="metric-value">{{ money(value) }}</div><div class="metric-sub">{{ help }}</div></article>
+{% endfor %}
 </div>
+<section class="metric-card" aria-labelledby="review-title">
+<h3 id="review-title">{{ t('review_title') }}</h3>
+<p>{{ t('projection_assumptions') }}</p><p>{{ t('expected_income') }}: {{ decisions.included_income | length }}</p>{% if not decisions.included_income %}<p>{{ t('no_future_income') }}</p>{% endif %}{% if decisions.overdue_income %}<p>{{ t('overdue_income') }}</p>{% endif %}
+{% if decisions.incomplete %}<p>{{ t('unknown_balance') }}</p>{% endif %}
+{% if decisions.past %}<p>{{ t('past_projection') }}</p>{% endif %}
+{% if decisions.first_negative %}<p><strong>{{ t('first_negative') }}: {{ decisions.first_negative.strftime('%d/%m/%Y') }}</strong></p>{% endif %}
+<p>{{ t('confirmed') }}: {{ money(decisions.confirmed) }} · {{ t('estimated') }}: {{ money(decisions.estimated) }} · {{ t('unclassified') }}: {{ money(decisions.unclassified) }}</p>
+<p>{{ t('review_dates') }} {{ decisions.unconfirmed_dates }}</p>
+{% if decisions.next_due %}<p>{{ t('next_due') }}: {{ decisions.next_due.item.occurrence_date.strftime('%d/%m/%Y') }} · {{ money(decisions.next_due.pending) }}</p>{% endif %}
+{% if decisions.concentration %}<p>{{ t('concentration') }}: {{ decisions.concentration.date.strftime('%d/%m/%Y') }} · {{ money(decisions.concentration.outflow) }}</p>{% endif %}
+</section>

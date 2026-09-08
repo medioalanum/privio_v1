@@ -6,20 +6,24 @@
 {% endif %}
 
 <nav class="month-navigation" aria-label="{{ t('month_navigation') }}">
-    <button class="secondary outline" hx-get="/?lang={{ lang }}&month={{ previous_month_key }}" hx-target="#dashboard-content" hx-select="#dashboard-content" hx-swap="outerHTML" aria-label="{{ t('previous_month') }}">‹</button>
+    <a role="button" class="secondary outline" href="/?lang={{ lang }}&month={{ previous_month_key }}" aria-label="{{ t('previous_month') }}">‹</a>
     <strong>{{ selected_month_label }}</strong>
-    <button class="secondary outline" hx-get="/?lang={{ lang }}&month={{ next_month_key }}" hx-target="#dashboard-content" hx-select="#dashboard-content" hx-swap="outerHTML" aria-label="{{ t('next_month') }}">›</button>
+<form action="/" method="get" class="month-form"><input type="hidden" name="lang" value="{{ lang }}"><label>{{ t('month_navigation') }}<input type="month" name="month" value="{{ selected_month_key }}" required></label><button type="submit">{{ t('apply') }}</button></form>
+<a href="/?lang={{ lang }}">{{ t('current_month') }}</a>
+    <a role="button" class="secondary outline" href="/?lang={{ lang }}&month={{ next_month_key }}" aria-label="{{ t('next_month') }}">›</a>
 </nav>
 
 <!-- Stats Cards -->
 {% include "partials/stats_cards.html" %}
 
-{% include "partials/accounts_table.html" %}
+
 
 <!-- Upcoming Occurrences (30/60/90 days) -->
 {% include "partials/upcoming_table.html" %}
 
-{% include "partials/forecast_table.html" %}
+{% include "partials/timeline.html" %}
+<details><summary>{{ t('accounts_title') }}</summary>{% include "partials/accounts_table.html" %}</details>
+<details><summary>{{ t('forecast_title') }}</summary>{% include "partials/forecast_table.html" %}</details>
 
 <!-- Commitments Management Table -->
-{% include "partials/commitments_table.html" %}
+<details><summary>{{ t('commitments_title') }}</summary>{% include "partials/commitments_table.html" %}</details>

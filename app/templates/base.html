@@ -123,6 +123,34 @@
             padding: 0;
             width: 2.5rem;
         }
+        .month-navigation { flex-wrap: wrap; }
+        .month-navigation a[role="button"] { margin: 0; padding: .35rem .8rem; }
+        .month-form, .filters, .quick-actions { display: flex; gap: .7rem; flex-wrap: wrap; align-items: end; }
+        .month-form { margin: 0; }
+        .month-form label { margin: 0; }
+        .month-navigation .month-form button { width: auto; padding: .5rem; height: auto; }
+        .filters label { flex: 1 1 150px; }
+        .metric-value, td strong { white-space: nowrap; }
+        .overflow-auto { overflow-x: auto; max-width: 100%; }
+        .nature-label { display: block; color: var(--pico-muted-color); }
+        :focus-visible { outline: 3px solid var(--pico-primary); outline-offset: 3px; }
+        [aria-busy="true"] { opacity: .6; }
+        .grid-cards { grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); }
+        @media (max-width: 600px) {
+            .month-navigation { display:grid; grid-template-columns:auto 1fr auto; gap:.5rem; }
+            .month-navigation strong { text-align:center; }
+            .month-form { grid-column:1 / -1; grid-row:2; }
+            .month-form label { flex:1; }
+            .month-navigation > a:not([role]) { grid-column:1 / -1; text-align:center; }
+            .month-navigation > a[aria-label]:last-child { grid-column:3; grid-row:1; }
+            .grid-cards { grid-template-columns:repeat(2,minmax(0,1fr)); gap:.5rem; }
+            .metric-value { font-size:1.15rem !important; }
+            #upcoming-section table, #upcoming-section tbody, #upcoming-section tr, #upcoming-section td { display:block; }
+            #upcoming-section thead { display:none; }
+            #upcoming-section tr { padding:.5rem 0; border-bottom:1px solid var(--pico-muted-border-color); }
+            #upcoming-section td { padding:.3rem; }
+            #upcoming-section .action-btns { flex-wrap:wrap; }
+ header nav, header nav ul { flex-wrap: wrap; } .metric-card { padding: .8rem; } .metric-value { font-size: 1.45rem; } }
     </style>
 </head>
 <body>
@@ -148,7 +176,7 @@
                 <li><a href="/docs" target="_blank" class="secondary">{{ t('swagger_api') }}</a></li>
                 <li>
                     <form action="/logout" method="post" style="margin: 0;">
-                        <button type="submit" class="outline secondary" style="margin: 0; padding: .45rem .8rem;">Sair</button>
+                        <button type="submit" class="outline secondary" style="margin: 0; padding: .45rem .8rem;">{{ t('logout') }}</button>
                     </form>
                 </li>
             </ul>
@@ -156,7 +184,7 @@
     </header>
 
     <main class="container">
-        <div id="toast-container"></div>
+        <div id="toast-container" role="status" aria-live="polite"></div>
         {% block content %}{% endblock %}
     </main>
 
@@ -168,9 +196,42 @@
     </footer>
 
     <script>
+        document.body.addEventListener('htmx:responseError', function () {
+            document.getElementById('toast-container').textContent = {{ t('operation_error') | tojson }};
+        });
+        document.body.addEventListener('htmx:sendError', function () {
+            document.getElementById('toast-container').textContent = {{ t('operation_error') | tojson }};
+        });
+        let modalOpener = null;
+        document.body.addEventListener('htmx:beforeRequest', function (event) {
+            if (event.detail.target && event.detail.target.id === 'modal-container') modalOpener = document.activeElement;
+        });
+        document.body.addEventListener('htmx:afterSwap', function (event) {
+            if (event.detail.target.id !== 'modal-container') return;
+            const dialog = event.detail.target.querySelector('.modal-content');
+            if (!dialog) return;
+            dialog.setAttribute('role', 'dialog');
+            dialog.setAttribute('aria-modal', 'true');
+            const heading = dialog.querySelector('h4');
+            if (heading) { heading.id = 'modal-heading'; dialog.setAttribute('aria-labelledby', heading.id); }
+            const first = dialog.querySelector('input:not([type="hidden"]):not([disabled]), select, button');
+            if (first) first.focus();
+        });
+        document.addEventListener('keydown', function (event) {
+            const dialog = document.querySelector('#modal-container .modal-content');
+            if (!dialog) return;
+            if (event.key === 'Escape') { event.preventDefault(); closeModal(); }
+            if (event.key === 'Tab') {
+                const fields = [...dialog.querySelectorAll('button, input:not([type="hidden"]), select, textarea, a[href]')].filter(el => !el.disabled && el.offsetParent !== null);
+                const first = fields[0], last = fields[fields.length - 1];
+                if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+                else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+            }
+        });
         function closeModal() {
             const modal = document.getElementById('modal-container');
             if (modal) modal.innerHTML = '';
+            if (modalOpener && modalOpener.isConnected) modalOpener.focus();
         }
     </script>
 </body>

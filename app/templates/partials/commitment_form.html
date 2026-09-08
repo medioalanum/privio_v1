@@ -22,9 +22,9 @@
                 {% if commitment.recurrence.value != 'none' %}
                     <fieldset>
                         <legend>{{ t('scope_legend') }}</legend>
-                        <label><input type="radio" name="scope" value="single" checked> {{ t('scope_single', month=occurrence_date.strftime('%m/%Y')) }}</label>
+                        <label><input type="radio" name="scope" value="single" {% if edit_scope != "series" %}checked{% endif %}> {{ t('scope_single', month=occurrence_date.strftime('%m/%Y')) }}</label>
                         <label><input type="radio" name="scope" value="future"> {{ t('scope_future', month=occurrence_date.strftime('%m/%Y')) }}</label>
-                        <label><input type="radio" name="scope" value="series"> {{ t('scope_series') }}</label>
+                        <label><input type="radio" name="scope" value="series" {% if edit_scope == "series" %}checked{% endif %}> {{ t('scope_series') }}</label>
                     </fieldset>
                 {% else %}
                     <input type="hidden" name="scope" value="series">
