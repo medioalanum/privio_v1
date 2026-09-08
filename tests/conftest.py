@@ -1,11 +1,13 @@
 """Pytest configuration and test database fixtures."""
 
 import base64
+import os
 from collections.abc import Generator
 
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
+from sqlalchemy.engine import make_url
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
@@ -15,13 +17,20 @@ from app.database import Base, get_db
 from app.main import app as fastapi_app
 
 # In-memory SQLite for testing
-SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
-
-test_engine = create_engine(
-    SQLALCHEMY_DATABASE_URL,
-    connect_args={"check_same_thread": False},
-    poolclass=StaticPool,
+SQLALCHEMY_DATABASE_URL = os.environ.get(
+    "PRIVIO_TEST_DATABASE_URL", "sqlite:///:memory:"
 )
+if not SQLALCHEMY_DATABASE_URL.startswith("sqlite"):
+    assert (make_url(SQLALCHEMY_DATABASE_URL).database or "").startswith(
+        "privio_test_"
+    ), "Refusing non-test database"
+    test_engine = create_engine(SQLALCHEMY_DATABASE_URL)
+else:
+    test_engine = create_engine(
+        SQLALCHEMY_DATABASE_URL,
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=test_engine)
 
 

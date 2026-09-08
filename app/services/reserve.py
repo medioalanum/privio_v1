@@ -154,9 +154,13 @@ def calculate_financial_position(
     default_account = next(
         (account for account in accounts if account.account_type == "allocation"), None
     )
-    deposits = db.scalars(select(Deposit)).all()
-    payments = db.scalars(select(Payment)).all()
-    transfers = db.scalars(select(AccountTransfer)).all()
+    deposits = db.scalars(select(Deposit).where(Deposit.date <= date.today())).all()
+    payments = db.scalars(
+        select(Payment).where(Payment.payment_date <= date.today())
+    ).all()
+    transfers = db.scalars(
+        select(AccountTransfer).where(AccountTransfer.date <= date.today())
+    ).all()
 
     balances: dict[int, Decimal] = {
         account.id: Decimal(account.opening_balance) for account in accounts

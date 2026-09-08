@@ -12,6 +12,8 @@
             hx-on::after-request="if(event.detail.successful) closeModal()"
             style="margin-top: 1rem;">
             
+            <label><input type="checkbox" name="expected">{{ t('expected_income') }}</label>
+            <label>{{ t('nature') }}<select name="nature">{% for n in ['unclassified','estimated','confirmed'] %}<option value="{{ n }}">{{ t(n) }}</option>{% endfor %}</select></label>
             <div class="grid">
                 <label for="deposit-amount">
                     {{ t('field_deposit_amount') }}

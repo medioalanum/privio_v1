@@ -92,7 +92,9 @@ def get_current_user(
         return session_user
 
     if credentials:
-        basic_user = authenticate_credentials(credentials.username, credentials.password)
+        basic_user = authenticate_credentials(
+            credentials.username, credentials.password
+        )
         if basic_user:
             return basic_user
 
@@ -112,7 +114,9 @@ def require_web_user(
     if user:
         return user
     if credentials:
-        basic_user = authenticate_credentials(credentials.username, credentials.password)
+        basic_user = authenticate_credentials(
+            credentials.username, credentials.password
+        )
         if basic_user:
             return basic_user
     raise HTTPException(
