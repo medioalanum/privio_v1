@@ -94,7 +94,12 @@ def login_action(
     next_path: Annotated[str, Form()] = "/",
 ) -> Response:
     """Validate credentials and establish a secure browser session."""
-    username = settings.editor_user if role == "editor" else settings.viewer_user
+    username = {
+        "admin": settings.admin_user,
+        "client": settings.client_user,
+        "editor": settings.editor_user,
+        "viewer": settings.viewer_user,
+    }.get(role, "")
     user = authenticate_credentials(username, password)
     safe_next = (
         next_path

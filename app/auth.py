@@ -22,6 +22,10 @@ class Role(StrEnum):
     EDITOR = "editor"
     VIEWER = "viewer"
 
+    @property
+    def label(self) -> str:
+        return "Admin" if self == Role.EDITOR else "Client"
+
 
 class AuthenticatedUser:
     """Represents an authenticated user with a specific role."""
@@ -33,12 +37,16 @@ class AuthenticatedUser:
 
 def authenticate_credentials(username: str, password: str) -> AuthenticatedUser | None:
     """Validate a username/password pair against configured accounts."""
-    is_editor_user = secrets.compare_digest(username, settings.editor_user)
+    is_editor_user = secrets.compare_digest(
+        username, settings.admin_user
+    ) or secrets.compare_digest(username, settings.editor_user)
     is_editor_pass = secrets.compare_digest(password, settings.editor_pass)
     if is_editor_user and is_editor_pass:
         return AuthenticatedUser(username=username, role=Role.EDITOR)
 
-    is_viewer_user = secrets.compare_digest(username, settings.viewer_user)
+    is_viewer_user = secrets.compare_digest(
+        username, settings.client_user
+    ) or secrets.compare_digest(username, settings.viewer_user)
     is_viewer_pass = secrets.compare_digest(password, settings.viewer_pass)
     if is_viewer_user and is_viewer_pass:
         return AuthenticatedUser(username=username, role=Role.VIEWER)
@@ -137,7 +145,7 @@ def require_editor_web(
 ) -> AuthenticatedUser:
     """Require the editor role for browser mutations."""
     if user.role != Role.EDITOR:
-        raise HTTPException(status_code=403, detail="Editor role required")
+        raise HTTPException(status_code=403, detail="Admin role required")
     return user
 
 
@@ -165,6 +173,6 @@ def require_editor(
     if user.role != Role.EDITOR:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Forbidden: Editor role required to perform modifications",
+            detail="Forbidden: Admin role required to perform modifications",
         )
     return user
