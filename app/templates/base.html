@@ -173,37 +173,10 @@
         .month-picker[open] .month-form {margin:.6rem 0;}
         @media(max-width:600px) {.month-navigation {display:flex;justify-content:space-between;align-items:start;gap:.4rem;} .month-picker {flex:1;min-width:0;} .month-form {display:block;} .month-form button {width:100%;} header nav {padding-block:.25rem;} .month-navigation {margin-bottom:1rem;} }
     </style>
+{% include "partials/navigation_style.html" %}
 </head>
 <body>
-    <header class="container">
-        <nav>
-            <ul>
-                <li>
-                    <strong>💰 {{ t('app_name') }}</strong>
-                    {% if user %}
-                        <span class="badge badge-role">{{ user.role.label }}</span>
-                    {% endif %}
-                </li>
-            </ul>
-            <ul>
-                <li>
-                    <div style="display: flex; gap: 0.3rem; align-items: center;">
-                        <a href="?lang=pt{% if selected_month_key %}&month={{ selected_month_key }}{% endif %}" class="lang-link {% if lang == 'pt' %}active{% endif %}">🇧🇷 PT</a>
-                        <a href="?lang=en{% if selected_month_key %}&month={{ selected_month_key }}{% endif %}" class="lang-link {% if lang == 'en' %}active{% endif %}">🇺🇸 EN</a>
-                        <a href="?lang=it{% if selected_month_key %}&month={{ selected_month_key }}{% endif %}" class="lang-link {% if lang == 'it' %}active{% endif %}">🇮🇹 IT</a>
-                    </div>
-                </li>
-                <li><a href="/?lang={{ lang }}{% if selected_month_key %}&month={{ selected_month_key }}{% endif %}" class="contrast">{{ t('dashboard') }}</a></li>
-                {% if user and user.role.value == "editor" %}<li><a href="/docs" target="_blank" class="secondary">{{ t('swagger_api') }}</a></li>{% endif %}
-                <li>
-                    <form action="/logout" method="post" style="margin: 0;">
-                        <button type="submit" class="outline secondary" style="margin: 0; padding: .45rem .8rem;">{{ t('logout') }}</button>
-                    </form>
-                </li>
-            </ul>
-        </nav>
-    </header>
-
+    {% include "partials/site_header.html" %}
     <main class="container">
         {% if preview_mode %}<p class="notice" role="status">Ambiente de demonstração · dados fictícios · credenciais diferentes da produção.</p>{% endif %}
         <div id="toast-container" role="status" aria-live="polite"></div>
@@ -256,5 +229,6 @@
             if (modalOpener && modalOpener.isConnected) modalOpener.focus();
         }
     </script>
+{% include "partials/navigation_script.html" %}
 </body>
 </html>
