@@ -1,0 +1,20 @@
+<header class="container site-header">
+    <nav class="site-nav" aria-label="{{ t('navigation') }}">
+        <details class="site-menu" data-disclosure>
+            <summary aria-label="{{ t('open_menu') }}"><span aria-hidden="true">☰</span></summary>
+            <div class="menu-panel">
+                {% if user and user.role.value == 'editor' %}<a href="/docs" target="_blank" rel="noopener">{{ t('swagger_api') }}</a>{% endif %}
+                {% if user %}<form action="/logout" method="post"><button type="submit" class="secondary outline">{{ t('logout') }}</button></form>{% endif %}
+            </div>
+        </details>
+        <a class="site-brand" href="/?lang={{ lang }}{% if selected_month_key %}&amp;month={{ selected_month_key }}{% endif %}">Privio{% if user %}<span class="badge badge-role">{{ user.role.label }}</span>{% endif %}</a>
+        <details class="language-picker" data-disclosure>
+            <summary aria-label="{{ t('choose_language') }}: {{ lang|upper }}">{{ lang|upper }}</summary>
+            <div class="language-options">
+                {% for code, label in [('pt', 'Português'), ('en', 'English'), ('it', 'Italiano')] %}
+                {% if code != lang %}<a href="{{ request.url.include_query_params(lang=code).path }}?{{ request.url.include_query_params(lang=code).query }}" hreflang="{{ code }}" lang="{{ code }}" aria-label="{{ label }}">{{ code|upper }}</a>{% endif %}
+                {% endfor %}
+            </div>
+        </details>
+    </nav>
+</header>
