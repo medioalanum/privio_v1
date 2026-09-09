@@ -104,11 +104,8 @@ PORT=8000
 ADMIN_USER=admin
 CLIENT_USER=client
 
-# Legacy aliases and password keys retained for compatibility
-EDITOR_USER=editor
-EDITOR_PASS=replace-with-a-strong-password
-VIEWER_USER=viewer
-VIEWER_PASS=replace-with-a-strong-password
+ADMIN_PASS=replace-with-a-strong-password
+CLIENT_PASS=replace-with-a-strong-password
 SESSION_SECRET=replace-with-a-long-random-value
 PREVIEW_MODE=false
 ```
@@ -150,22 +147,20 @@ API also accepts HTTP Basic Auth for scripts and external clients.
 
 | Profile | Canonical username | Password setting | Access |
 |---|---|---|---|
-| **Admin** | `ADMIN_USER` (default `admin`) | `EDITOR_PASS` | Read, create, edit, register payments and inflows, manage accounts and recurring rules |
-| **Client** | `CLIENT_USER` (default `client`) | `VIEWER_PASS` | Read-only overview and permitted data; mutations return HTTP 403 |
+| **Admin** | `ADMIN_USER` (default `admin`) | `ADMIN_PASS` | Read, create, edit, register payments and inflows, manage accounts and recurring rules |
+| **Client** | `CLIENT_USER` (default `client`) | `CLIENT_PASS` | Read-only overview and permitted data; mutations return HTTP 403 |
 
 On the browser login page, select **Admin** or **Client** and enter the
-corresponding password. Existing installations keep their previous Editor and
-Viewer passwords. There are no separate `ADMIN_PASS` or `CLIENT_PASS` settings.
+corresponding password. Authentication and signed sessions use only the canonical
+`admin` and `client` roles. Retired aliases and sessions containing retired roles
+are rejected; sign in again once after migration using the same passwords.
+Session usernames must match the configured account for their role. Cookies remain
+HTTP-only, SameSite=Lax and Secure in production. No accounts or financial records
+are migrated in the database.
 
-`EDITOR_USER` and `VIEWER_USER` remain accepted configured aliases. Internally,
-authorization and signed sessions retain the `editor` and `viewer` role values
-for compatibility. Renaming the visible profiles does not grant additional
-permissions or rewrite stored financial data. Preserve `SESSION_SECRET` during
-this transition to retain valid existing sessions.
-
-The session cookie is HTTP-only, uses `SameSite=Lax`, and is marked `Secure` in
-production. Passwords remain in environment variables and are never stored in
-the cookie.
+Production requires explicit `ADMIN_PASS`, `CLIENT_PASS` and `SESSION_SECRET`;
+missing secrets or development defaults stop startup instead of granting access.
+Admin and Client login names must be distinct. Never log or commit passwords.
 
 ## Monthly Dashboards and Financial Definitions
 
@@ -339,7 +334,7 @@ disposable database whose name starts with `privio_test_`, then run `uv run pyte
 The fixture creates and drops tables: never use production or a database holding
 records you need to retain.
 
-Tests cover authentication and legacy aliases, Client write restrictions,
+Tests cover authentication and retired-alias rejection, Client write restrictions,
 recurrences, monetary calculations, payment idempotency, month boundaries,
 coverage, rolling forecasts, and record preservation across dashboard reads and
 repeated migrations. See [.github/workflows/checks.yml](.github/workflows/checks.yml)
@@ -355,11 +350,10 @@ compatible with Neon PostgreSQL.
 1. Create a Neon project and copy its pooled PostgreSQL connection string.
 2. Connect this repository to Render as a Blueprint.
 3. Set `DATABASE_URL` in the Render dashboard.
-4. `render.yaml` configures `ADMIN_USER=admin` and `CLIENT_USER=client` and
-   retains the legacy aliases. On initial provisioning, Render generates the
-   secrets in `EDITOR_PASS`, `VIEWER_PASS`, and `SESSION_SECRET`. Preserve existing
-   secret values when upgrading; do not rename their keys or replace passwords
-   merely to change the visible profile names.
+4. `render.yaml` configures `ADMIN_USER=admin` and `CLIENT_USER=client`.
+   Set `ADMIN_PASS` and `CLIENT_PASS` explicitly; preserve their current values
+   during migration. Keep `SESSION_SECRET` unchanged. The Blueprint does not
+   regenerate passwords when their keys change.
 5. Deploy and verify `/health`.
 
 The application normalizes standard `postgresql://` URLs for psycopg 3 and uses
@@ -440,3 +434,17 @@ and prioritize the form. Language and appearance are available before login.
 Password visibility is an explicit button; failed login keeps the selected role
 and language, clears the password, and announces a translated error. Current
 credentials and permissions are unchanged by this presentation release.
+
+## Admin/Client credential migration
+
+Prepare the new password keys in Render with the existing values using **Save
+only**, while the prior application remains running. Deploy this version and
+verify both logins, Client write denial, dashboards and PDF downloads. Then remove
+the retired user/password keys from Render, keeping ADMIN_USER, ADMIN_PASS,
+CLIENT_USER and CLIENT_PASS for these accounts. No password or SESSION_SECRET
+rotation is required. Old browser sessions require a fresh sign-in. Update external
+Basic Auth clients still using retired login names before switching.
+
+Code rollback must also restore the credential-key configuration expected by the
+prior version before redeployment, using the preserved values. Never restore an old
+financial database to roll back authentication or appearance.

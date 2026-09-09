@@ -1,3 +1,7 @@
+> Historical record of the earlier dashboard rollout. The later canonical
+> authentication release supersedes its alias/password-key compatibility notes;
+> see README.md for current ADMIN_PASS/CLIENT_PASS configuration.
+
 # Admin / Client: entregas incrementais
 
 ## Contrato

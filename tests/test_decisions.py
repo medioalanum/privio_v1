@@ -200,9 +200,9 @@ def test_payment_duplicate_and_invalid_amount(client, db_session):
     )
 
 
-def test_viewer_cannot_confirm_or_receive(viewer_client):
+def test_client_cannot_confirm_or_receive(readonly_client):
     assert (
-        viewer_client.post(
+        readonly_client.post(
             "/ui/reviews",
             data={
                 "commitment_id": 1,
@@ -213,7 +213,7 @@ def test_viewer_cannot_confirm_or_receive(viewer_client):
         == 403
     )
     assert (
-        viewer_client.post(
+        readonly_client.post(
             "/ui/income/1/receive",
             data={"received_date": "2026-09-05", "received_amount": "1"},
         ).status_code
@@ -306,7 +306,7 @@ def test_concurrent_payment_submission_postgres(db_session):
     try:
         with TestClient(
             app,
-            headers=_get_basic_auth_header(settings.editor_user, settings.editor_pass),
+            headers=_get_basic_auth_header(settings.admin_user, settings.admin_pass),
         ) as client:
             with ThreadPoolExecutor(max_workers=2) as pool:
                 codes = list(

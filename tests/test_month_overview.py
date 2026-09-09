@@ -56,14 +56,14 @@ def test_coverage_empty_negative_unknown_and_future(db_session):
     assert decision_summary(db_session, [bill], TODAY, TODAY)["coverage"] is None
 
 
-def test_client_overview_has_no_operations(viewer_client, db_session):
+def test_client_overview_has_no_operations(readonly_client, db_session):
     db_session.add(
         FinancialAccount(
             name="Synthetic", currency="EUR", opening_balance=100, account_type="bank"
         )
     )
     db_session.commit()
-    page = viewer_client.get("/")
+    page = readonly_client.get("/")
     assert page.status_code == 200
     assert 'id="coverage-title"' in page.text
     assert 'max="100"' in page.text
@@ -74,8 +74,8 @@ def test_client_overview_has_no_operations(viewer_client, db_session):
     assert 'href="/docs"' not in page.text
 
 
-def test_admin_keeps_operations(editor_client):
-    page = editor_client.get("/").text
+def test_admin_keeps_operations(admin_client):
+    page = admin_client.get("/").text
     assert "/ui/commitments/new" in page
     assert 'id="accounts-panel"' in page
     assert 'id="coverage-title"' not in page
@@ -118,7 +118,7 @@ def test_forecast_carries_balance_and_arrears_once(db_session):
 
 
 def test_both_dashboards_preserve_all_database_rows(
-    editor_client, viewer_client, db_session
+    admin_client, readonly_client, db_session
 ):
     from app.database import Base
     from scripts.migrate import migrate
@@ -133,7 +133,7 @@ def test_both_dashboards_preserve_all_database_rows(
         }
 
     before = snapshot()
-    for client in [editor_client, viewer_client]:
+    for client in [admin_client, readonly_client]:
         for month in ["2026-08", "2026-09", "2026-10"]:
             assert client.get("/", params={"month": month}).status_code == 200
     migrate(db_session.get_bind())
@@ -141,7 +141,7 @@ def test_both_dashboards_preserve_all_database_rows(
     assert snapshot() == before
 
 
-def test_grouped_pending_totals_are_visible(editor_client, db_session):
+def test_grouped_pending_totals_are_visible(admin_client, db_session):
     from datetime import date
 
     today = date.today()
@@ -155,6 +155,6 @@ def test_grouped_pending_totals_are_visible(editor_client, db_session):
             )
         )
     db_session.commit()
-    page = editor_client.get("/").text
+    page = admin_client.get("/").text
     assert 'class="date-group"' in page
     assert "€ 30,00" in page
