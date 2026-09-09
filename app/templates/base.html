@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}{{ t('app_title') }}{% endblock %}</title>
     
+    {% include 'partials/theme_bootstrap.html' %}
     <!-- Pico.css CDN (v2) -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
     
@@ -174,6 +175,7 @@
         @media(max-width:600px) {.month-navigation {display:flex;justify-content:space-between;align-items:start;gap:.4rem;} .month-picker {flex:1;min-width:0;} .month-form {display:block;} .month-form button {width:100%;} header nav {padding-block:.25rem;} .month-navigation {margin-bottom:1rem;} }
     </style>
 {% include "partials/navigation_style.html" %}
+{% include 'partials/theme_style.html' %}
 </head>
 <body>
     {% include "partials/site_header.html" %}
