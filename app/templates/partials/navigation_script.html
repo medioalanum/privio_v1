@@ -5,7 +5,8 @@
  disclosures.forEach(item => {
   item.addEventListener('toggle', () => { if (item.open) disclosures.forEach(other => { if(other !== item) close(other); }); });
   item.addEventListener('keydown', event => { if(event.key === 'Escape' && item.open) { event.preventDefault(); close(item,true); } });
-  item.addEventListener('focusout', event => { if(!item.contains(event.relatedTarget)) close(item); });
+  // Touch browsers can blur with relatedTarget=null before the control click.
+  // Keep the disclosure open until Escape, an outside click or its summary closes it.
  });
  document.addEventListener('click', event => disclosures.forEach(item => { if(!item.contains(event.target)) close(item); }));
  const languages = document.querySelector('.language-picker');
