@@ -68,13 +68,16 @@ def test_synthetic_examples_and_pdf(admin_client, db_session, monkeypatch, day):
         response = admin_client.get(f"/?lang={lang}&month={day:%Y-%m}")
         assert response.status_code == 200
         assert notice in response.text
+        db_session.rollback()  # A real request receives a fresh database session.
         pdf = admin_client.get(f"/reports/monthly.pdf?month={day:%Y-%m}&lang={lang}")
         assert pdf.status_code == 200
         pages = PdfReader(BytesIO(pdf.content)).pages
         assert all("DEMO" in page.extract_text() for page in pages)
 
 
-def test_demo_login_both_roles_and_client_denial(unauth_client, monkeypatch):
+def test_demo_login_both_roles_and_client_denial(
+    unauth_client, db_session, monkeypatch
+):
     monkeypatch.setattr(settings, "demo_mode", True)
     monkeypatch.setattr(settings, "admin_pass", "test")
     monkeypatch.setattr(settings, "client_pass", "test")
@@ -85,6 +88,7 @@ def test_demo_login_both_roles_and_client_denial(unauth_client, monkeypatch):
         assert "demo-notice" in response.text
         if role == "client":
             assert unauth_client.post("/commitments", json={}).status_code == 403
+        db_session.rollback()
         assert (
             unauth_client.get("/reports/monthly.pdf?month=2026-09").status_code == 200
         )
