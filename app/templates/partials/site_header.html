@@ -3,6 +3,7 @@
         <details class="site-menu" data-disclosure>
             <summary aria-label="{{ t('open_menu') }}"><span aria-hidden="true">☰</span></summary>
             <div class="menu-panel">
+                {% include "partials/appearance.html" %}
                 {% if user and user.role.value == 'editor' %}<a href="/docs" target="_blank" rel="noopener">{{ t('swagger_api') }}</a>{% endif %}
                 {% if user %}<form action="/logout" method="post"><button type="submit" class="secondary outline">{{ t('logout') }}</button></form>{% endif %}
             </div>
