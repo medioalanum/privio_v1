@@ -5,6 +5,7 @@ DEFAULT_LANGUAGE = "pt"
 
 TRANSLATIONS: dict[str, dict[str, str]] = {
     "pt": {
+        "download_monthly_pdf": "Baixar relatório do mês (PDF)",
         # General & Navigation
         "app_title": "Privio - Gestão de Compromissos & Reserva",
         "app_name": "Privio Commitments",
@@ -196,6 +197,7 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "msg_transfer_created": "Transferência registrada sem alterar os recursos totais.",
     },
     "en": {
+        "download_monthly_pdf": "Download monthly report (PDF)",
         # General & Navigation
         "app_title": "Privio - Commitment & Reserve Management",
         "app_name": "Privio Commitments",
@@ -387,6 +389,7 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "msg_transfer_created": "Transfer recorded without changing total resources.",
     },
     "it": {
+        "download_monthly_pdf": "Scarica il resoconto mensile (PDF)",
         # General & Navigation
         "app_title": "Privio - Gestione Impegni & Riserva",
         "app_name": "Privio Commitments",

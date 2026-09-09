@@ -386,3 +386,33 @@ role-specific release sequence.
 ## License and Copyright
 
 Privio © 2026 — All rights reserved.
+
+## Monthly PDF report
+
+Both Admin and Client can select a month and choose **Download monthly report
+(PDF)** beside the month navigation. The report follows the selected dashboard
+language (Portuguese, English or Italian) and includes every bill due in that
+calendar month, independently of search, status and other list filters. Earlier
+arrears and the following month's bills are excluded explicitly.
+
+The payer-focused PDF shows the amount left to pay, actual recorded payments and
+the combined monthly total, followed by pending bills ordered by due date and
+paid bills with their payment dates. Overdue bills, bills due today and estimated
+amounts are identified in text. Payments belong to the bill's due-date month even
+when paid in another month. A recorded payment settles an occurrence at its actual
+paid amount; future-dated payments are not yet treated as paid. Legacy paid
+statuses without payment records show missing details and incomplete totals,
+never invented payment amounts or dates.
+
+Each download is a fresh snapshot with an explicit UTC export timestamp. It is
+built in memory, sent as an attachment with `Cache-Control: private, no-store`,
+and is not saved or retained by Privio. Downloaded files remain on the user's
+device. This is a view of the current records, not a historical reconstruction or
+a bank receipt. PostgreSQL exports use a repeatable-read, read-only transaction.
+No schema, account, payment, balance or credential changes are required.
+
+The authenticated endpoint is `GET /reports/monthly.pdf?month=YYYY-MM&lang=pt`.
+ReportLab is a locked runtime dependency with no browser or external rendering
+service required. Regression coverage in `tests/test_monthly_report.py` checks
+month boundaries, actual paid amounts, unknown legacy values, recurrence,
+permissions, record preservation and pagination in all supported languages.

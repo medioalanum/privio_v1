@@ -15,6 +15,7 @@ from app.config import settings
 from app.database import get_db
 from app.routers.commitments import router as commitments_router
 from app.routers.deposits import router as deposits_router
+from app.routers.reports import router as reports_router
 from app.routers.web import router as web_router
 
 
@@ -47,6 +48,7 @@ app.add_middleware(
 app.include_router(commitments_router)
 app.include_router(deposits_router)
 app.include_router(web_router)
+app.include_router(reports_router)
 
 
 @app.get("/health", tags=["System"], summary="Health check")
