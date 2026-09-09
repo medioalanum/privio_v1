@@ -1,3 +1,4 @@
+{% if demo_mode %}<aside class="demo-notice" aria-label="Privio Demo">{{ t('demo_notice') }}</aside>{% endif %}
 <header class="container site-header">
     <nav class="site-nav" aria-label="{{ t('navigation') }}">
         {% if user %}

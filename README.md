@@ -460,3 +460,20 @@ brand, links, buttons, focus rings and selected controls in both themes.
 
 Run JavaScript interaction regressions with Node 22+:
 `node --test tests/browser/*.test.mjs` (also required in CI), alongside `uv run pytest`.
+
+## Public demo isolation
+
+`DEMO_MODE` defaults to false. Only the separate public demo enables it; both demo
+profiles use password `test`. Production rejects this public password when demo
+mode is off. Public credentials never grant access to Render, Neon or the company
+application.
+
+`python -m scripts.demo` initializes an empty, explicitly pinned demo database once.
+Subsequent starts preserve visitor changes. `python -m scripts.demo --reset`
+atomically replaces examples only after a demo marker exists. Both commands refuse
+other database endpoints before connecting. Reset preserves primary-key sequences
+so stale browser forms cannot modify a new example under a recycled ID.
+
+Demo PDFs and pages are labeled fictional. The demo is shared: visitors see each
+other's edits. Do not enter real information. Financial data and credentials from
+the company environment must never be copied into the demo or screenshots.
