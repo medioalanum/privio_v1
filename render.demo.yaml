@@ -1,0 +1,35 @@
+# Provision only in the Outlook demo account. Never sync this to the company account.
+services:
+  - type: web
+    name: privio-demo
+    runtime: python
+    plan: free
+    region: frankfurt
+    branch: main
+    autoDeployTrigger: off
+    buildCommand: uv sync --frozen --no-dev
+    startCommand: sh scripts/start.sh
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.14
+      - key: ENVIRONMENT
+        value: production
+      - key: DEBUG
+        value: 'false'
+      - key: DEMO_MODE
+        value: 'true'
+      - key: APP_NAME
+        value: Privio Demo
+      - key: ADMIN_USER
+        value: admin
+      - key: ADMIN_PASS
+        value: test
+      - key: CLIENT_USER
+        value: client
+      - key: CLIENT_PASS
+        value: test
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: DATABASE_URL
+        sync: false
