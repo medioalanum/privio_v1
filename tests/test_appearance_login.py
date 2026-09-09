@@ -12,8 +12,12 @@ import pytest
 def test_login_language_theme_and_error(unauth_client, lang, title):
     result = unauth_client.get("/login?lang=" + lang)
     assert title in result.text
-    assert f'<html lang="{lang}">' in result.text
-    assert "data-theme-choice" in result.text
+    assert f'<html lang="{lang}" data-theme="dark">' in result.text
+    assert 'data-theme="dark"' in result.text
+    assert 'class="site-menu"' not in result.text
+    assert "data-theme-choice" not in result.text
+    assert "localStorage" not in result.text
+    assert 'class="language-picker"' in result.text
     assert 'autocomplete="current-password"' in result.text
     assert 'aria-controls="password"' in result.text
     error = unauth_client.post(

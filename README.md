@@ -430,7 +430,9 @@ The PDF retains its white print layout independently of the screen theme.
 
 Sign-in uses a two-column layout: a decorative calendar/payment illustration on
 the left and the access form on the right. Small screens hide the illustration
-and prioritize the form. Language and appearance are available before login.
+and prioritize the form. Language is available before login; the login screen always uses the dark palette
+and has no hamburger menu or appearance controls. This does not overwrite the
+user’s saved theme for authenticated pages.
 Password visibility is an explicit button; failed login keeps the selected role
 and language, clears the password, and announces a translated error. Current
 credentials and permissions are unchanged by this presentation release.
@@ -448,3 +450,13 @@ Basic Auth clients still using retired login names before switching.
 Code rollback must also restore the credential-key configuration expected by the
 prior version before redeployment, using the preserved values. Never restore an old
 financial database to roll back authentication or appearance.
+
+## Mobile menu behavior
+
+The menu stays open while interacting with its links and theme radios, including
+touch browsers that emit focus loss without a related target. Close it with its
+summary, an outside tap/click, or Escape. The shared green accent applies to the
+brand, links, buttons, focus rings and selected controls in both themes.
+
+Run JavaScript interaction regressions with Node 22+:
+`node --test tests/browser/*.test.mjs` (also required in CI), alongside `uv run pytest`.
