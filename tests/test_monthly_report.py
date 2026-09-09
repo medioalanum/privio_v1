@@ -135,6 +135,7 @@ def test_empty_and_multi_page_pdf(db_session, lang):
     data = monthly_data(db, MONTH, NOW.date())
     pdf = PdfReader(BytesIO(render_monthly_pdf(data, MONTH, NOW, lang)))
     assert len(pdf.pages) > 2
+    assert "Conta 000" in pdf.pages[0].extract_text()
     text = "\n".join(page.extract_text() for page in pdf.pages)
     for i in range(75):
         assert text.count(f"Conta {i:03d}") == 1
@@ -166,3 +167,26 @@ def test_anonymous_and_invalid_month(unauth_client, client):
     )
     for month in ["2026-13", "2026-9", "0000-01", "9999-12", "garbage"]:
         assert client.get(f"/reports/monthly.pdf?month={month}").status_code == 422
+
+
+def test_paid_only_and_empty_messages(db_session):
+    db = db_session
+    item = bill(db)
+    db.add(
+        Payment(
+            commitment_id=item.id,
+            occurrence_date=MONTH,
+            payment_date=MONTH,
+            planned_amount=80,
+            paid_amount=75,
+        )
+    )
+    db.commit()
+    data = monthly_data(db, MONTH, NOW.date())
+    assert data["due"] == 0 and data["total"] == Decimal("75")
+    text = (
+        PdfReader(BytesIO(render_monthly_pdf(data, MONTH, NOW, "pt")))
+        .pages[0]
+        .extract_text()
+    )
+    assert "Todas as contas deste mês estão marcadas como pagas." in text
