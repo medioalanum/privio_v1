@@ -64,7 +64,8 @@ record/field, relationships and numeric/date/status values by canonical hashes.
 Apply the migration twice and repeat comparisons against all original tables.
 New tables are legitimate additions; unexpected original-row changes block release.
 
-The Render main branch auto-deploys. Merge is a release action. Before merge,
+The company service and its Blueprint have automatic deploy/sync disabled. A merge
+to main does not deploy the company. Before an explicit company release,
 complete CI, candidate validation, restore rehearsal and a fresh backup. Confirm
 service srv-da688hmk1f9s73di8csg, branch main, correct DATABASE_URL and start command.
 This migration adds independent empty tables and does not rewrite existing rows,

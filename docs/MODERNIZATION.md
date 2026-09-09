@@ -1,3 +1,7 @@
+> Historical modernization record. Current release controls are documented in
+> [Demo operations](DEMO_OPERATIONS.md): company auto-deploy and Blueprint Auto Sync
+> are now disabled.
+
 # Modernization audit
 
 Baseline: 98f01311b7eeae930924d54b768078cc3c1cdf2c; working branch:

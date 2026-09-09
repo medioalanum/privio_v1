@@ -406,8 +406,9 @@ compatible with Neon PostgreSQL.
 The application normalizes standard `postgresql://` URLs for psycopg 3 and uses
 connection health checks suitable for serverless PostgreSQL.
 
-For an existing installation, the linked `main` branch auto-deploys. Treat merge
-as a release action: pass CI, validate the candidate, take a consistent backup,
+The company service and its Blueprint use manual deployment and synchronization.
+Merging to `main` does not publish to the company. Before explicitly deploying a
+functional release, pass CI, validate the candidate in the demo, take a consistent backup,
 and prove restoration in an isolated database before a functional release.
 Compare preserved records before and after publication, confirm the deployed
 commit and `/health`, and monitor the service. Publish dependent phases one at a
