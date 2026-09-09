@@ -8,7 +8,14 @@ from xml.sax.saxutils import escape
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle
-from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+from reportlab.platypus import (
+    CondPageBreak,
+    Paragraph,
+    SimpleDocTemplate,
+    Spacer,
+    Table,
+    TableStyle,
+)
 from sqlalchemy import select, text
 from sqlalchemy.orm import Session
 
@@ -173,7 +180,7 @@ def render_monthly_pdf(data: dict, month: date, exported: datetime, lang: str) -
         leading=19,
         spaceBefore=17,
         spaceAfter=10,
-        keepWithNext=True,
+        keepWithNext=False,
     )
     title = ParagraphStyle(
         "title", parent=heading, fontSize=24, leading=29, spaceBefore=0
@@ -243,6 +250,7 @@ def render_monthly_pdf(data: dict, month: date, exported: datetime, lang: str) -
         story.append(p(copy["empty"], heading))
     else:
         for paid, section in [(False, "due_section"), (True, "paid_section")]:
+            story.append(CondPageBreak(145))
             story.append(p(copy[section], heading))
             rows = data["paid" if paid else "pending"]
             if not rows:
