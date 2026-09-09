@@ -19,12 +19,12 @@ SESSION_COOKIE = "privio_session"
 class Role(StrEnum):
     """User authorization roles."""
 
-    EDITOR = "editor"
-    VIEWER = "viewer"
+    ADMIN = "admin"
+    CLIENT = "client"
 
     @property
     def label(self) -> str:
-        return "Admin" if self == Role.EDITOR else "Client"
+        return "Admin" if self == Role.ADMIN else "Client"
 
 
 class AuthenticatedUser:
@@ -37,19 +37,23 @@ class AuthenticatedUser:
 
 def authenticate_credentials(username: str, password: str) -> AuthenticatedUser | None:
     """Validate a username/password pair against configured accounts."""
-    is_editor_user = secrets.compare_digest(
-        username, settings.admin_user
-    ) or secrets.compare_digest(username, settings.editor_user)
-    is_editor_pass = secrets.compare_digest(password, settings.editor_pass)
-    if is_editor_user and is_editor_pass:
-        return AuthenticatedUser(username=username, role=Role.EDITOR)
+    is_admin_user = secrets.compare_digest(
+        username.encode(), settings.admin_user.encode()
+    )
+    is_admin_pass = secrets.compare_digest(
+        password.encode(), settings.admin_pass.encode()
+    )
+    if is_admin_user and is_admin_pass:
+        return AuthenticatedUser(username=username, role=Role.ADMIN)
 
-    is_viewer_user = secrets.compare_digest(
-        username, settings.client_user
-    ) or secrets.compare_digest(username, settings.viewer_user)
-    is_viewer_pass = secrets.compare_digest(password, settings.viewer_pass)
-    if is_viewer_user and is_viewer_pass:
-        return AuthenticatedUser(username=username, role=Role.VIEWER)
+    is_client_user = secrets.compare_digest(
+        username.encode(), settings.client_user.encode()
+    )
+    is_client_pass = secrets.compare_digest(
+        password.encode(), settings.client_pass.encode()
+    )
+    if is_client_user and is_client_pass:
+        return AuthenticatedUser(username=username, role=Role.CLIENT)
     return None
 
 
@@ -73,9 +77,15 @@ def user_from_session(token: str | None) -> AuthenticatedUser | None:
         expected = hmac.new(
             settings.session_secret.encode(), payload.encode(), hashlib.sha256
         ).hexdigest()
-        if not secrets.compare_digest(signature, expected):
+        if not secrets.compare_digest(signature.encode(), expected.encode()):
             return None
-        return AuthenticatedUser(username=username, role=Role(role_value))
+        role = Role(role_value)
+        configured_name = (
+            settings.admin_user if role == Role.ADMIN else settings.client_user
+        )
+        if not secrets.compare_digest(username.encode(), configured_name.encode()):
+            return None
+        return AuthenticatedUser(username=username, role=role)
     except (ValueError, UnicodeDecodeError):
         return None
 
@@ -90,7 +100,7 @@ def get_current_user(
         credentials: Submitted HTTP Basic authentication credentials.
 
     Returns:
-        AuthenticatedUser with either EDITOR or VIEWER role.
+        AuthenticatedUser with either ADMIN or CLIENT role.
 
     Raises:
         HTTPException: 401 Unauthorized if credentials do not match.
@@ -133,44 +143,44 @@ def require_web_user(
     )
 
 
-def require_viewer_web(
+def require_authenticated_web(
     user: Annotated[AuthenticatedUser, Depends(require_web_user)],
 ) -> AuthenticatedUser:
     """Allow both roles to access browser pages."""
     return user
 
 
-def require_editor_web(
+def require_admin_web(
     user: Annotated[AuthenticatedUser, Depends(require_web_user)],
 ) -> AuthenticatedUser:
-    """Require the editor role for browser mutations."""
-    if user.role != Role.EDITOR:
+    """Require the admin role for browser mutations."""
+    if user.role != Role.ADMIN:
         raise HTTPException(status_code=403, detail="Admin role required")
     return user
 
 
-def require_viewer(
+def require_authenticated(
     user: Annotated[AuthenticatedUser, Depends(get_current_user)],
 ) -> AuthenticatedUser:
-    """Allow access to both Viewer and Editor roles."""
+    """Allow access to both Client and Admin roles."""
     return user
 
 
-def require_editor(
+def require_admin(
     user: Annotated[AuthenticatedUser, Depends(get_current_user)],
 ) -> AuthenticatedUser:
-    """Enforce Editor role, rejecting Viewer with HTTP 403 Forbidden.
+    """Enforce Admin role, rejecting Client with HTTP 403 Forbidden.
 
     Args:
         user: The authenticated user from credentials.
 
     Returns:
-        AuthenticatedUser if role is EDITOR.
+        AuthenticatedUser if role is ADMIN.
 
     Raises:
-        HTTPException: 403 Forbidden if user is only a VIEWER.
+        HTTPException: 403 Forbidden if user is only a CLIENT.
     """
-    if user.role != Role.EDITOR:
+    if user.role != Role.ADMIN:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Forbidden: Admin role required to perform modifications",

@@ -1,4 +1,4 @@
-"""Public role names preserve authorization and existing signed sessions."""
+"""Canonical roles preserve authorization and reject retired logins/sessions."""
 
 import pytest
 
@@ -14,10 +14,8 @@ from app.config import settings
 @pytest.mark.parametrize(
     "name,password,role",
     [
-        ("admin", settings.editor_pass, Role.EDITOR),
-        ("client", settings.viewer_pass, Role.VIEWER),
-        (settings.editor_user, settings.editor_pass, Role.EDITOR),
-        (settings.viewer_user, settings.viewer_pass, Role.VIEWER),
+        (settings.admin_user, settings.admin_pass, Role.ADMIN),
+        (settings.client_user, settings.client_pass, Role.CLIENT),
     ],
 )
 def test_login_names_and_sessions(name, password, role):
@@ -28,14 +26,14 @@ def test_login_names_and_sessions(name, password, role):
     assert authenticate_credentials(name, password + "wrong") is None
 
 
-def test_role_labels(editor_client, viewer_client):
-    assert ">Admin</span>" in editor_client.get("/").text
-    assert ">Client</span>" in viewer_client.get("/").text
+def test_role_labels(admin_client, readonly_client):
+    assert ">Admin</span>" in admin_client.get("/").text
+    assert ">Client</span>" in readonly_client.get("/").text
 
 
-def test_client_alias_cannot_write(unauth_client):
+def test_client_cannot_write(unauth_client):
     response = unauth_client.post(
-        "/commitments", auth=("client", settings.viewer_pass), json={}
+        "/commitments", auth=("client", settings.client_pass), json={}
     )
     assert response.status_code == 403
 
@@ -43,8 +41,8 @@ def test_client_alias_cannot_write(unauth_client):
 @pytest.mark.parametrize(
     "role,password,label",
     [
-        ("admin", settings.editor_pass, "Admin"),
-        ("client", settings.viewer_pass, "Client"),
+        ("admin", settings.admin_pass, "Admin"),
+        ("client", settings.client_pass, "Client"),
     ],
 )
 def test_browser_login_names(unauth_client, role, password, label):

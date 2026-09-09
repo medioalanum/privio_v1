@@ -58,7 +58,7 @@ def db_session() -> Generator[Session, None, None]:
 
 @pytest.fixture(scope="function")
 def client(db_session: Session) -> Generator[TestClient, None, None]:
-    """Default test client with Editor role authentication."""
+    """Default test client with Admin role authentication."""
 
     def override_get_db() -> Generator[Session, None, None]:
         try:
@@ -67,7 +67,7 @@ def client(db_session: Session) -> Generator[TestClient, None, None]:
             pass
 
     fastapi_app.dependency_overrides[get_db] = override_get_db
-    auth_headers = _get_basic_auth_header(settings.editor_user, settings.editor_pass)
+    auth_headers = _get_basic_auth_header(settings.admin_user, settings.admin_pass)
     with TestClient(
         fastapi_app, headers=auth_headers, raise_server_exceptions=True
     ) as test_client:
@@ -76,8 +76,8 @@ def client(db_session: Session) -> Generator[TestClient, None, None]:
 
 
 @pytest.fixture(scope="function")
-def editor_client(db_session: Session) -> Generator[TestClient, None, None]:
-    """Test client authenticated as Editor."""
+def admin_client(db_session: Session) -> Generator[TestClient, None, None]:
+    """Test client authenticated as Admin."""
 
     def override_get_db() -> Generator[Session, None, None]:
         try:
@@ -86,7 +86,7 @@ def editor_client(db_session: Session) -> Generator[TestClient, None, None]:
             pass
 
     fastapi_app.dependency_overrides[get_db] = override_get_db
-    auth_headers = _get_basic_auth_header(settings.editor_user, settings.editor_pass)
+    auth_headers = _get_basic_auth_header(settings.admin_user, settings.admin_pass)
     with TestClient(
         fastapi_app, headers=auth_headers, raise_server_exceptions=True
     ) as test_client:
@@ -95,8 +95,8 @@ def editor_client(db_session: Session) -> Generator[TestClient, None, None]:
 
 
 @pytest.fixture(scope="function")
-def viewer_client(db_session: Session) -> Generator[TestClient, None, None]:
-    """Test client authenticated as Viewer."""
+def readonly_client(db_session: Session) -> Generator[TestClient, None, None]:
+    """Test client authenticated as Client."""
 
     def override_get_db() -> Generator[Session, None, None]:
         try:
@@ -105,7 +105,7 @@ def viewer_client(db_session: Session) -> Generator[TestClient, None, None]:
             pass
 
     fastapi_app.dependency_overrides[get_db] = override_get_db
-    auth_headers = _get_basic_auth_header(settings.viewer_user, settings.viewer_pass)
+    auth_headers = _get_basic_auth_header(settings.client_user, settings.client_pass)
     with TestClient(
         fastapi_app, headers=auth_headers, raise_server_exceptions=True
     ) as test_client:

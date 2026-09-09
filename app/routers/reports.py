@@ -6,7 +6,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy.orm import Session
 
-from app.auth import AuthenticatedUser, require_viewer_web
+from app.auth import AuthenticatedUser, require_authenticated_web
 from app.database import get_db
 from app.i18n import normalize_lang
 from app.services.monthly_report import monthly_data, render_monthly_pdf
@@ -16,7 +16,7 @@ router = APIRouter()
 
 @router.get("/reports/monthly.pdf", include_in_schema=False)
 def monthly_report(
-    user: Annotated[AuthenticatedUser, Depends(require_viewer_web)],
+    user: Annotated[AuthenticatedUser, Depends(require_authenticated_web)],
     db: Annotated[Session, Depends(get_db)],
     month: Annotated[str, Query(pattern=r"^\d{4}-\d{2}$")],
     lang: str = "pt",

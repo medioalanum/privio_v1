@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.auth import AuthenticatedUser, require_editor, require_viewer
+from app.auth import AuthenticatedUser, require_admin, require_authenticated
 from app.database import get_db
 from app.models.commitment import Commitment, RecurrenceEnum, StatusEnum
 from app.schemas.commitment import (
@@ -35,9 +35,9 @@ router = APIRouter(tags=["Commitments"])
 def create_commitment(
     payload: CommitmentCreate,
     db: Annotated[Session, Depends(get_db)],
-    _: Annotated[AuthenticatedUser, Depends(require_editor)],
+    _: Annotated[AuthenticatedUser, Depends(require_admin)],
 ) -> Commitment:
-    """Create a new financial commitment record (Editor role required)."""
+    """Create a new financial commitment record (Admin role required)."""
     commitment = Commitment(**payload.model_dump())
     db.add(commitment)
     db.commit()
@@ -52,7 +52,7 @@ def create_commitment(
 )
 def list_commitments(
     db: Annotated[Session, Depends(get_db)],
-    _: Annotated[AuthenticatedUser, Depends(require_viewer)],
+    _: Annotated[AuthenticatedUser, Depends(require_authenticated)],
     category: Annotated[str | None, Query(description="Filter by category")] = None,
     status_filter: Annotated[
         StatusEnum | None, Query(alias="status", description="Filter by status")
@@ -63,7 +63,7 @@ def list_commitments(
     limit: Annotated[int, Query(ge=1, le=500, description="Max items to return")] = 100,
     offset: Annotated[int, Query(ge=0, description="Number of items to skip")] = 0,
 ) -> Sequence[Commitment]:
-    """Retrieve commitments with optional filtering and pagination (Viewer or Editor required)."""
+    """Retrieve commitments with optional filtering and pagination (Client or Admin required)."""
     query = select(Commitment)
     if category is not None:
         query = query.where(Commitment.category == category)
@@ -92,7 +92,7 @@ def list_commitments(
 )
 def get_upcoming_commitments(
     db: Annotated[Session, Depends(get_db)],
-    _: Annotated[AuthenticatedUser, Depends(require_viewer)],
+    _: Annotated[AuthenticatedUser, Depends(require_authenticated)],
     days: Annotated[
         int, Query(ge=1, le=3650, description="Number of days in the future to project")
     ] = 30,
@@ -100,7 +100,7 @@ def get_upcoming_commitments(
         date | None, Query(description="Base start date (defaults to today)")
     ] = None,
 ) -> list[CommitmentOccurrenceResponse]:
-    """Generate upcoming occurrences for all commitments within the next N days (Viewer or Editor required).
+    """Generate upcoming occurrences for all commitments within the next N days (Client or Admin required).
 
     Handles recurrence for weekly, monthly, semiannual, and annual commitments.
     """
@@ -121,7 +121,7 @@ def get_upcoming_commitments(
 )
 def get_suggested_monthly(
     db: Annotated[Session, Depends(get_db)],
-    _: Annotated[AuthenticatedUser, Depends(require_viewer)],
+    _: Annotated[AuthenticatedUser, Depends(require_authenticated)],
     only_active: Annotated[
         bool, Query(description="Include only pending commitments")
     ] = True,
@@ -139,9 +139,9 @@ def get_suggested_monthly(
 def get_commitment(
     commitment_id: int,
     db: Annotated[Session, Depends(get_db)],
-    _: Annotated[AuthenticatedUser, Depends(require_viewer)],
+    _: Annotated[AuthenticatedUser, Depends(require_authenticated)],
 ) -> Commitment:
-    """Retrieve a specific commitment by its identifier (Viewer or Editor required)."""
+    """Retrieve a specific commitment by its identifier (Client or Admin required)."""
     commitment = db.get(Commitment, commitment_id)
     if commitment is None:
         raise HTTPException(
@@ -160,9 +160,9 @@ def update_commitment(
     commitment_id: int,
     payload: CommitmentCreate,
     db: Annotated[Session, Depends(get_db)],
-    _: Annotated[AuthenticatedUser, Depends(require_editor)],
+    _: Annotated[AuthenticatedUser, Depends(require_admin)],
 ) -> Commitment:
-    """Fully update an existing commitment (Editor role required)."""
+    """Fully update an existing commitment (Admin role required)."""
     commitment = db.get(Commitment, commitment_id)
     if commitment is None:
         raise HTTPException(
@@ -187,9 +187,9 @@ def patch_commitment(
     commitment_id: int,
     payload: CommitmentUpdate,
     db: Annotated[Session, Depends(get_db)],
-    _: Annotated[AuthenticatedUser, Depends(require_editor)],
+    _: Annotated[AuthenticatedUser, Depends(require_admin)],
 ) -> Commitment:
-    """Partially update specific fields of an existing commitment (Editor role required)."""
+    """Partially update specific fields of an existing commitment (Admin role required)."""
     commitment = db.get(Commitment, commitment_id)
     if commitment is None:
         raise HTTPException(
@@ -214,9 +214,9 @@ def patch_commitment(
 def delete_commitment(
     commitment_id: int,
     db: Annotated[Session, Depends(get_db)],
-    _: Annotated[AuthenticatedUser, Depends(require_editor)],
+    _: Annotated[AuthenticatedUser, Depends(require_admin)],
 ) -> None:
-    """Delete a commitment by ID (Editor role required)."""
+    """Delete a commitment by ID (Admin role required)."""
     commitment = db.get(Commitment, commitment_id)
     if commitment is None:
         raise HTTPException(
