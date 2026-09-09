@@ -5,6 +5,53 @@ FastAPI, SQLAlchemy 2.0, PostgreSQL, Jinja2, and HTMX. It provides a
 server-rendered dashboard, a REST API, role-based access control, recurring
 commitment projections, per-occurrence adjustments, and deposit tracking.
 
+## Experimente o Privio / Try the demo
+
+**[Abrir demonstração pública / Open public demo](https://privio-demo.onrender.com/)**
+
+Escolha o perfil na tela de login e informe a senha abaixo. / Choose a role on the
+login screen and enter the password below.
+
+| Perfil / Role | Senha / Password | O que pode fazer / Permissions |
+| --- | --- | --- |
+| **Admin** | `test` | Criar, editar e excluir contas; registrar pagamentos e receitas; consultar e exportar PDFs. / Manage fictional records and export reports. |
+| **Client** | `test` | Consultar contas, saldos e previsões; exportar o relatório mensal. / Browse and export reports; no editing. |
+
+Para chamadas de API com autenticação Basic, os usuários são `admin` e `client`,
+ambos com senha `test`, **somente neste ambiente demo**.
+
+- Todos os dados são fictícios. **Não insira informações reais.**
+- A demonstração é compartilhada: alterações de um visitante aparecem para outros.
+- Os exemplos são restaurados diariamente, por volta de **03:17 UTC**. Alterações
+  não são permanentes; o agendamento pode sofrer atrasos.
+- Hospedada no Render gratuito: o primeiro acesso após inatividade pode levar
+  cerca de um minuto. Aguarde o serviço iniciar.
+- O ambiente de uso real utiliza contas, banco e credenciais independentes.
+
+All data is fictional and shared. Do not enter real information. Examples reset
+around 03:17 UTC daily; changes are temporary. The first visit after inactivity
+may take about a minute while the free service starts.
+
+### Telas da demonstração / Demo screenshots
+
+Capturas com dados fictícios; os valores exibidos podem mudar após a restauração.
+
+![Login da demonstração, com instruções de acesso](docs/images/demo-login.png)
+
+![Dashboard Admin com contas fictícias e ações de gerenciamento](docs/images/demo-admin.png)
+
+![Visão Client em tema claro, com saldos e previsão](docs/images/demo-client.png)
+
+<details>
+<summary>Exemplo do relatório mensal em PDF</summary>
+
+![Relatório mensal identificado como demonstração](docs/images/demo-report.png)
+
+</details>
+
+See [demo operations](docs/DEMO_OPERATIONS.md) for provisioning, controlled releases,
+reset recovery and account separation.
+
 ## Features
 
 - Branded browser login with secure, signed, HTTP-only session cookies.

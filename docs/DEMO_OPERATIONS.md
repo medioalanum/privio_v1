@@ -14,6 +14,8 @@ company database, backups, environment files or screenshots into the demo.
 ## Provisioning and releases
 
 `render.yaml` describes the company service with automatic deployment disabled.
+The company Blueprint also has Auto Sync disabled in Render; keep both controls
+manual so repository edits cannot update the company infrastructure indirectly.
 `render.demo.yaml` describes the independently provisioned demo in Frankfurt.
 The demo database is a new Neon PostgreSQL 18 project in Frankfurt. DEMO_MODE is
 true only on the demo; ENVIRONMENT remains production so cookies use HTTPS.
