@@ -28,8 +28,8 @@ from app.auth import (
     AuthenticatedUser,
     authenticate_credentials,
     create_session_token,
-    require_editor_web,
-    require_viewer_web,
+    require_admin_web,
+    require_authenticated_web,
 )
 from app.config import settings
 from app.database import get_db
@@ -113,8 +113,6 @@ def login_action(
     username = {
         "admin": settings.admin_user,
         "client": settings.client_user,
-        "editor": settings.editor_user,
-        "viewer": settings.viewer_user,
     }.get(role, "")
     user = authenticate_credentials(username, password)
     safe_next = (
@@ -245,7 +243,7 @@ def _get_dashboard_context(
 def index_page(
     request: Request,
     db: Annotated[Session, Depends(get_db)],
-    user: Annotated[AuthenticatedUser, Depends(require_viewer_web)],
+    user: Annotated[AuthenticatedUser, Depends(require_authenticated_web)],
     lang: Annotated[str | None, Query(description="Language code (pt/en/it)")] = None,
 ) -> Response:
     """Render the main dashboard server-rendered page."""
@@ -262,7 +260,7 @@ def index_page(
 def get_upcoming_partial(
     request: Request,
     db: Annotated[Session, Depends(get_db)],
-    user: Annotated[AuthenticatedUser, Depends(require_viewer_web)],
+    user: Annotated[AuthenticatedUser, Depends(require_authenticated_web)],
     days: Annotated[int, Query(ge=1, le=365)] = 30,
     lang: Annotated[str | None, Query()] = None,
 ) -> Response:
@@ -276,7 +274,7 @@ def get_upcoming_partial(
 @router.get("/ui/commitments/new", response_class=HTMLResponse)
 def new_commitment_form(
     request: Request,
-    user: Annotated[AuthenticatedUser, Depends(require_viewer_web)],
+    user: Annotated[AuthenticatedUser, Depends(require_authenticated_web)],
     lang: Annotated[str | None, Query()] = None,
 ) -> Response:
     """Render the modal form for creating a new commitment."""
@@ -301,7 +299,7 @@ def edit_commitment_form(
     request: Request,
     commitment_id: int,
     db: Annotated[Session, Depends(get_db)],
-    user: Annotated[AuthenticatedUser, Depends(require_viewer_web)],
+    user: Annotated[AuthenticatedUser, Depends(require_authenticated_web)],
     occurrence_date: Annotated[date | None, Query()] = None,
     scope: Annotated[str, Query(pattern="^(single|series)$")] = "single",
     lang: Annotated[str | None, Query()] = None,
@@ -343,7 +341,7 @@ def edit_commitment_form(
 def create_commitment_form_action(
     request: Request,
     db: Annotated[Session, Depends(get_db)],
-    user: Annotated[AuthenticatedUser, Depends(require_editor_web)],
+    user: Annotated[AuthenticatedUser, Depends(require_admin_web)],
     description: Annotated[str, Form()],
     amount: Annotated[Decimal, Form(gt=0, decimal_places=2, max_digits=12)],
     due_date: Annotated[date, Form()],
@@ -388,7 +386,7 @@ def update_commitment_form_action(
     request: Request,
     commitment_id: int,
     db: Annotated[Session, Depends(get_db)],
-    user: Annotated[AuthenticatedUser, Depends(require_editor_web)],
+    user: Annotated[AuthenticatedUser, Depends(require_admin_web)],
     description: Annotated[str, Form()],
     amount: Annotated[Decimal, Form(gt=0, decimal_places=2, max_digits=12)],
     due_date: Annotated[date, Form()],
@@ -469,7 +467,7 @@ def toggle_commitment_status(
     request: Request,
     commitment_id: int,
     db: Annotated[Session, Depends(get_db)],
-    user: Annotated[AuthenticatedUser, Depends(require_editor_web)],
+    user: Annotated[AuthenticatedUser, Depends(require_admin_web)],
     occurrence_date: Annotated[date | None, Query()] = None,
     lang: Annotated[str | None, Query()] = None,
 ) -> Response:
@@ -552,7 +550,7 @@ def new_payment_form(
     occurrence_date: date,
     amount: Decimal,
     db: Annotated[Session, Depends(get_db)],
-    user: Annotated[AuthenticatedUser, Depends(require_editor_web)],
+    user: Annotated[AuthenticatedUser, Depends(require_admin_web)],
     lang: Annotated[str | None, Query()] = None,
 ) -> Response:
     """Open the form that records an actual payment for one due date."""
@@ -583,7 +581,7 @@ def new_payment_form(
 def save_payment(
     request: Request,
     db: Annotated[Session, Depends(get_db)],
-    user: Annotated[AuthenticatedUser, Depends(require_editor_web)],
+    user: Annotated[AuthenticatedUser, Depends(require_admin_web)],
     commitment_id: Annotated[int, Form()],
     occurrence_date: Annotated[date, Form()],
     payment_date: Annotated[date, Form()],
@@ -714,7 +712,7 @@ def reopen_payment(
     commitment_id: int,
     occurrence_date: date,
     db: Annotated[Session, Depends(get_db)],
-    user: Annotated[AuthenticatedUser, Depends(require_editor_web)],
+    user: Annotated[AuthenticatedUser, Depends(require_admin_web)],
     lang: Annotated[str | None, Query()] = None,
 ) -> Response:
     """Remove actual payment data and reopen only the selected due date."""
@@ -757,7 +755,7 @@ def delete_commitment_action(
     request: Request,
     commitment_id: int,
     db: Annotated[Session, Depends(get_db)],
-    user: Annotated[AuthenticatedUser, Depends(require_editor_web)],
+    user: Annotated[AuthenticatedUser, Depends(require_admin_web)],
     lang: Annotated[str | None, Query()] = None,
 ) -> Response:
     """Delete commitment via HTMX and return updated dashboard partial."""
@@ -797,7 +795,7 @@ def delete_commitment_occurrence(
     commitment_id: int,
     occurrence_date: date,
     db: Annotated[Session, Depends(get_db)],
-    user: Annotated[AuthenticatedUser, Depends(require_editor_web)],
+    user: Annotated[AuthenticatedUser, Depends(require_admin_web)],
     scope: Annotated[str, Query(pattern="^(single|future)$")] = "single",
     lang: Annotated[str | None, Query()] = None,
 ) -> Response:
@@ -845,7 +843,7 @@ def delete_commitment_occurrence(
 def new_deposit_form(
     request: Request,
     db: Annotated[Session, Depends(get_db)],
-    user: Annotated[AuthenticatedUser, Depends(require_viewer_web)],
+    user: Annotated[AuthenticatedUser, Depends(require_authenticated_web)],
     lang: Annotated[str | None, Query()] = None,
 ) -> Response:
     """Render the modal form for registering a new deposit."""
@@ -872,7 +870,7 @@ def new_deposit_form(
 @router.get("/ui/accounts/new", response_class=HTMLResponse)
 def new_account_form(
     request: Request,
-    user: Annotated[AuthenticatedUser, Depends(require_editor_web)],
+    user: Annotated[AuthenticatedUser, Depends(require_admin_web)],
     lang: Annotated[str | None, Query()] = None,
 ) -> Response:
     """Render the account/wallet creation form."""
@@ -894,7 +892,7 @@ def new_account_form(
 def create_account(
     request: Request,
     db: Annotated[Session, Depends(get_db)],
-    user: Annotated[AuthenticatedUser, Depends(require_editor_web)],
+    user: Annotated[AuthenticatedUser, Depends(require_admin_web)],
     name: Annotated[str, Form()],
     account_type: Annotated[str, Form()],
     responsible: Annotated[str | None, Form()] = None,
@@ -933,7 +931,7 @@ def create_account(
 def new_transfer_form(
     request: Request,
     db: Annotated[Session, Depends(get_db)],
-    user: Annotated[AuthenticatedUser, Depends(require_editor_web)],
+    user: Annotated[AuthenticatedUser, Depends(require_admin_web)],
     lang: Annotated[str | None, Query()] = None,
 ) -> Response:
     """Render the internal transfer form."""
@@ -961,7 +959,7 @@ def new_transfer_form(
 def create_transfer(
     request: Request,
     db: Annotated[Session, Depends(get_db)],
-    user: Annotated[AuthenticatedUser, Depends(require_editor_web)],
+    user: Annotated[AuthenticatedUser, Depends(require_admin_web)],
     from_account_id: Annotated[int, Form()],
     to_account_id: Annotated[int, Form()],
     amount: Annotated[Decimal, Form(gt=0, decimal_places=2, max_digits=12)],
@@ -1023,7 +1021,7 @@ def create_transfer(
 def create_deposit_form_action(
     request: Request,
     db: Annotated[Session, Depends(get_db)],
-    user: Annotated[AuthenticatedUser, Depends(require_editor_web)],
+    user: Annotated[AuthenticatedUser, Depends(require_admin_web)],
     amount: Annotated[Decimal, Form(gt=0, decimal_places=2, max_digits=12)],
     date_val: Annotated[date, Form(alias="date")],
     note: Annotated[str | None, Form()] = None,
@@ -1100,7 +1098,7 @@ def create_deposit_form_action(
 def review_occurrence(
     request: Request,
     db: Annotated[Session, Depends(get_db)],
-    user: Annotated[AuthenticatedUser, Depends(require_editor_web)],
+    user: Annotated[AuthenticatedUser, Depends(require_admin_web)],
     commitment_id: Annotated[int, Form()],
     occurrence_date: Annotated[date, Form()],
     nature: Annotated[str, Form(pattern="^(confirmed|estimated|unclassified)$")],
@@ -1145,7 +1143,7 @@ def receive_income(
     request: Request,
     income_id: int,
     db: Annotated[Session, Depends(get_db)],
-    user: Annotated[AuthenticatedUser, Depends(require_editor_web)],
+    user: Annotated[AuthenticatedUser, Depends(require_admin_web)],
     received_date: Annotated[date, Form()],
     received_amount: Annotated[Decimal, Form(gt=0, decimal_places=2)],
     lang: Annotated[str | None, Query()] = None,

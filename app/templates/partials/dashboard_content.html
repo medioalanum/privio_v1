@@ -14,7 +14,7 @@
 </nav>
 <p><a href="/reports/monthly.pdf?month={{ selected_month_key }}&amp;lang={{ lang }}" download>{{ t("download_monthly_pdf") }}</a></p>
 
-{% if user.role.value == 'viewer' %}
+{% if user.role.value == 'client' %}
 <section aria-labelledby="overview-title"><h1 id="overview-title">{{ t('overview') }}</h1>
 {% if decisions.difference is not none %}<p class="overview-message">{{ t('covered_message') if decisions.difference >= 0 else t('gap_message') }}</p>{% endif %}</section>
 {% endif %}
@@ -23,7 +23,7 @@
 
 
 
-{% if user.role.value == 'viewer' %}
+{% if user.role.value == 'client' %}
 {% include "partials/client_coverage.html" %}
 <details><summary>{{ t('pending_list') }}</summary>{% include "partials/upcoming_table.html" %}</details>
 {% else %}
@@ -31,9 +31,9 @@
 {% endif %}
 
 <details><summary>{{ t("more_details") }} · {{ t("cash_projected_title") }}</summary>{% include "partials/timeline.html" %}</details>
-{% if user.role.value == "editor" %}<details id="accounts-panel"><summary>{{ t('accounts_title') }}</summary>{% include "partials/accounts_table.html" %}</details>{% endif %}
-{% if user.role.value == "viewer" %}{% include "partials/cash_forecast.html" %}{% else %}<details><summary>{{ t("future_view") }}</summary>{% include "partials/cash_forecast.html" %}</details>{% endif %}
+{% if user.role.value == "admin" %}<details id="accounts-panel"><summary>{{ t('accounts_title') }}</summary>{% include "partials/accounts_table.html" %}</details>{% endif %}
+{% if user.role.value == "client" %}{% include "partials/cash_forecast.html" %}{% else %}<details><summary>{{ t("future_view") }}</summary>{% include "partials/cash_forecast.html" %}</details>{% endif %}
 <details><summary>{{ t('forecast_title') }}</summary>{% include "partials/forecast_table.html" %}</details>
 
 <!-- Commitments Management Table -->
-{% if user.role.value == "editor" %}<details><summary>{{ t('commitments_title') }}</summary>{% include "partials/commitments_table.html" %}</details>{% endif %}
+{% if user.role.value == "admin" %}<details><summary>{{ t('commitments_title') }}</summary>{% include "partials/commitments_table.html" %}</details>{% endif %}

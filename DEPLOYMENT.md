@@ -38,7 +38,7 @@ O [Render](https://render.com) oferece hospedagem web gratuita e suporte nativo 
 5. Preencha a variável `DATABASE_URL` com a string copiada do Neon.
 6. Clique em **"Apply"**. O Render irá:
    - Instalar o `uv` e sincronizar todas as dependências com `uv sync --frozen --no-dev`.
-   - Gerar credenciais seguras para `EDITOR_PASS` e `VIEWER_PASS`.
+   - Configurar explicitamente credenciais seguras para `ADMIN_PASS` e `CLIENT_PASS`.
    - Iniciar o servidor FastAPI com Uvicorn.
    - Criar as tabelas no PostgreSQL na inicialização.
 
@@ -68,10 +68,10 @@ O [Render](https://render.com) oferece hospedagem web gratuita e suporte nativo 
    | `DATABASE_URL` | *Sua connection string do Neon* |
    | `ENVIRONMENT` | `production` |
    | `DEBUG` | `false` |
-   | `EDITOR_USER` | `editor` |
-   | `EDITOR_PASS` | *Sua senha forte de editor* |
-   | `VIEWER_USER` | `viewer` |
-   | `VIEWER_PASS` | *Sua senha forte de viewer* |
+   | `ADMIN_USER` | `admin` |
+   | `ADMIN_PASS` | *Sua senha forte de admin* |
+   | `CLIENT_USER` | `client` |
+   | `CLIENT_PASS` | *Sua senha forte de client* |
 5. Clique em **"Create Web Service"**.
 
 ---
@@ -105,10 +105,10 @@ O [Fly.io](https://fly.io) executa a aplicação empacotada no Dockerfile otimiz
    ```bash
    fly secrets set \
      DATABASE_URL="postgresql://alex:AbC123dEf@ep-cool-mountain-123456-pooler.us-east-2.aws.neon.tech/neondb?sslmode=require" \
-     EDITOR_USER="editor" \
-     EDITOR_PASS="sua_senha_segura_editor" \
-     VIEWER_USER="viewer" \
-     VIEWER_PASS="sua_senha_segura_viewer"
+     ADMIN_USER="admin" \
+     ADMIN_PASS="sua_senha_segura_admin" \
+     CLIENT_USER="client" \
+     CLIENT_PASS="sua_senha_segura_client"
    ```
 
 5. Faça o deploy:
