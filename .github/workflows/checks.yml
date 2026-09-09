@@ -15,6 +15,10 @@ jobs:
           version: '0.12.10'
           python-version: '3.12'
       - run: uv sync --frozen --all-groups
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test tests/browser/*.test.mjs
       - run: uv run ruff check .
       - run: uv run ruff format --check .
       - run: uv run ty check .
