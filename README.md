@@ -416,3 +416,12 @@ ReportLab is a locked runtime dependency with no browser or external rendering
 service required. Regression coverage in `tests/test_monthly_report.py` checks
 month boundaries, actual paid amounts, unknown legacy values, recurrence,
 permissions, record preservation and pagination in all supported languages.
+
+## Header navigation and languages
+
+The left menu contains Swagger API for Admin and sign out for both profiles.
+The Privio brand returns to the dashboard. The current language stays at the right;
+PT/EN/IT alternatives open to its left by mouse hover, click, touch or keyboard.
+Escape closes the selector/menu and returns focus. Language links preserve the
+selected month and list filters; an unsaved form prompts before navigation.
+Financial records, access permissions and report calculations are unchanged.

@@ -1,0 +1,23 @@
+<script>
+(() => {
+ const disclosures = [...document.querySelectorAll('[data-disclosure]')];
+ const close = (item, focus = false) => { item.open = false; if (focus) item.querySelector('summary').focus(); };
+ disclosures.forEach(item => {
+  item.addEventListener('toggle', () => { if (item.open) disclosures.forEach(other => { if(other !== item) close(other); }); });
+  item.addEventListener('keydown', event => { if(event.key === 'Escape' && item.open) { event.preventDefault(); close(item,true); } });
+  item.addEventListener('focusout', event => { if(!item.contains(event.relatedTarget)) close(item); });
+ });
+ document.addEventListener('click', event => disclosures.forEach(item => { if(!item.contains(event.target)) close(item); }));
+ const languages = document.querySelector('.language-picker');
+ if(languages) {
+  languages.addEventListener('pointerenter', event => { if(event.pointerType === 'mouse' && !languages.open) { languages.open = true; languages.dataset.hoverOpened = 'true'; } });
+  languages.querySelector('summary').addEventListener('click', event => { if(event.detail > 0 && languages.dataset.hoverOpened) { event.preventDefault(); languages.open = true; } delete languages.dataset.hoverOpened; });
+  languages.addEventListener('pointerleave', event => { if(event.pointerType === 'mouse' && !languages.contains(document.activeElement)) close(languages); });
+ }
+ // Changing language must not silently discard an in-progress edit.
+ document.addEventListener('input', event => { if(event.target.closest('form')) event.target.closest('form').dataset.dirty = 'true'; });
+ document.querySelectorAll('.language-options a').forEach(link => link.addEventListener('click', event => {
+  if(document.querySelector('form[data-dirty="true"]') && !window.confirm({{ t('language_unsaved')|tojson }})) event.preventDefault();
+ }));
+})();
+</script>

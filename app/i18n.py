@@ -5,6 +5,10 @@ DEFAULT_LANGUAGE = "pt"
 
 TRANSLATIONS: dict[str, dict[str, str]] = {
     "pt": {
+        "navigation": "Navegação",
+        "open_menu": "Abrir menu",
+        "choose_language": "Escolher idioma",
+        "language_unsaved": "Há alterações não salvas. Trocar o idioma e descartá-las?",
         "download_monthly_pdf": "Baixar relatório do mês (PDF)",
         # General & Navigation
         "app_title": "Privio - Gestão de Compromissos & Reserva",
@@ -197,6 +201,10 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "msg_transfer_created": "Transferência registrada sem alterar os recursos totais.",
     },
     "en": {
+        "navigation": "Navigation",
+        "open_menu": "Open menu",
+        "choose_language": "Choose language",
+        "language_unsaved": "There are unsaved changes. Change language and discard them?",
         "download_monthly_pdf": "Download monthly report (PDF)",
         # General & Navigation
         "app_title": "Privio - Commitment & Reserve Management",
@@ -389,6 +397,10 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "msg_transfer_created": "Transfer recorded without changing total resources.",
     },
     "it": {
+        "navigation": "Navigazione",
+        "open_menu": "Apri menu",
+        "choose_language": "Scegli lingua",
+        "language_unsaved": "Ci sono modifiche non salvate. Cambiare lingua e scartarle?",
         "download_monthly_pdf": "Scarica il resoconto mensile (PDF)",
         # General & Navigation
         "app_title": "Privio - Gestione Impegni & Riserva",
