@@ -8,6 +8,7 @@ services:
     buildCommand: "curl -LsSf https://astral.sh/uv/install.sh | sh && export PATH=\"$HOME/.local/bin:$PATH\" && uv sync --frozen --no-dev"
     startCommand: "export PATH=\"$HOME/.local/bin:$PATH\" && sh scripts/start.sh"
     plan: free
+    autoDeployTrigger: off  # Deploy explicitly after validating changes.
     healthCheckPath: /health
     envVars:
       - key: ENVIRONMENT

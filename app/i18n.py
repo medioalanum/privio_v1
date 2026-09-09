@@ -5,6 +5,9 @@ DEFAULT_LANGUAGE = "pt"
 
 TRANSLATIONS: dict[str, dict[str, str]] = {
     "pt": {
+        "demo_notice": "Demonstração pública — dados fictícios. Não insira informações reais. As alterações são compartilhadas e apagadas na restauração diária.",
+        "demo_login": "Escolha Admin ou Client e use a senha test.",
+        "demo_pdf": "DEMONSTRAÇÃO — DADOS FICTÍCIOS",
         "appearance": "Aparência",
         "theme_auto": "Automático",
         "theme_light": "Claro",
@@ -217,6 +220,9 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "msg_transfer_created": "Transferência registrada sem alterar os recursos totais.",
     },
     "en": {
+        "demo_notice": "Public demo — fictional data. Do not enter real information. Changes are shared and removed by the daily reset.",
+        "demo_login": "Choose Admin or Client and use password test.",
+        "demo_pdf": "DEMO — FICTIONAL DATA",
         "appearance": "Appearance",
         "theme_auto": "Automatic",
         "theme_light": "Light",
@@ -429,6 +435,9 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "msg_transfer_created": "Transfer recorded without changing total resources.",
     },
     "it": {
+        "demo_notice": "Demo pubblica — dati fittizi. Non inserire informazioni reali. Le modifiche sono condivise e cancellate dal ripristino giornaliero.",
+        "demo_login": "Scegli Admin o Client e usa la password test.",
+        "demo_pdf": "DEMO — DATI FITTIZI",
         "appearance": "Aspetto",
         "theme_auto": "Automatico",
         "theme_light": "Chiaro",
@@ -776,18 +785,27 @@ TRANSLATIONS["it"].update(
 
 for language, values in {
     "pt": {
+        "demo_notice": "Demonstração pública — dados fictícios. Não insira informações reais. As alterações são compartilhadas e apagadas na restauração diária.",
+        "demo_login": "Escolha Admin ou Client e use a senha test.",
+        "demo_pdf": "DEMONSTRAÇÃO — DADOS FICTÍCIOS",
         "expected_income": "Entrada prevista (ainda não recebida)",
         "no_future_income": "Nenhuma entrada futura cadastrada neste horizonte.",
         "overdue_income": "Há entradas previstas atrasadas. Excluídas da projeção até revisão.",
         "projection_assumptions": "Saldo atual + entradas previstas − saídas pendentes. Vencidos entram hoje, preservando suas datas. Inclui valores estimados e não classificados.",
     },
     "en": {
+        "demo_notice": "Public demo — fictional data. Do not enter real information. Changes are shared and removed by the daily reset.",
+        "demo_login": "Choose Admin or Client and use password test.",
+        "demo_pdf": "DEMO — FICTIONAL DATA",
         "expected_income": "Expected income (not yet received)",
         "no_future_income": "No future income registered in this horizon.",
         "overdue_income": "Overdue expected income is excluded until reviewed.",
         "projection_assumptions": "Current balance + expected income − pending outflows. Overdue bills enter today, preserving dates. Includes estimated and unclassified amounts.",
     },
     "it": {
+        "demo_notice": "Demo pubblica — dati fittizi. Non inserire informazioni reali. Le modifiche sono condivise e cancellate dal ripristino giornaliero.",
+        "demo_login": "Scegli Admin o Client e usa la password test.",
+        "demo_pdf": "DEMO — DATI FITTIZI",
         "expected_income": "Entrata prevista (non ancora ricevuta)",
         "no_future_income": "Nessuna entrata futura registrata in questo orizzonte.",
         "overdue_income": "Entrate previste scadute escluse fino alla revisione.",
@@ -798,18 +816,27 @@ for language, values in {
 
 for language, values in {
     "pt": {
+        "demo_notice": "Demonstração pública — dados fictícios. Não insira informações reais. As alterações são compartilhadas e apagadas na restauração diária.",
+        "demo_login": "Escolha Admin ou Client e use a senha test.",
+        "demo_pdf": "DEMONSTRAÇÃO — DADOS FICTÍCIOS",
         "logout": "Sair",
         "next_due": "Próximo vencimento",
         "concentration": "Maior concentração de saídas",
         "review_dates": "Datas aguardando confirmação:",
     },
     "en": {
+        "demo_notice": "Public demo — fictional data. Do not enter real information. Changes are shared and removed by the daily reset.",
+        "demo_login": "Choose Admin or Client and use password test.",
+        "demo_pdf": "DEMO — FICTIONAL DATA",
         "logout": "Sign out",
         "next_due": "Next due date",
         "concentration": "Largest daily outflow",
         "review_dates": "Dates awaiting confirmation:",
     },
     "it": {
+        "demo_notice": "Demo pubblica — dati fittizi. Non inserire informazioni reali. Le modifiche sono condivise e cancellate dal ripristino giornaliero.",
+        "demo_login": "Scegli Admin o Client e usa la password test.",
+        "demo_pdf": "DEMO — DATI FITTIZI",
         "logout": "Esci",
         "next_due": "Prossima scadenza",
         "concentration": "Massima uscita giornaliera",

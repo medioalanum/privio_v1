@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     host: str = "0.0.0.0"
     port: int = 8000
     preview_mode: bool = False
+    demo_mode: bool = False
 
     admin_user: str = "admin"
     admin_pass: str = "admin123"
@@ -44,6 +45,8 @@ class Settings(BaseSettings):
         if not self.admin_pass or not self.client_pass or not self.session_secret:
             raise ValueError("Authentication secrets must not be empty")
         if self.environment == "production":
+            if not self.demo_mode and "test" in (self.admin_pass, self.client_pass):
+                raise ValueError("Public test passwords require demo mode")
             required = {"admin_pass", "client_pass", "session_secret"}
             if (
                 not required <= self.model_fields_set

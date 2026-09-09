@@ -85,6 +85,7 @@ def _login_context(
         "error": error,
         "next_path": next_path,
         "preview_mode": settings.preview_mode,
+        "demo_mode": settings.demo_mode,
         "user": None,
         "selected_role": role,
         "lang": lang,
@@ -211,6 +212,7 @@ def _get_dashboard_context(
     return {
         "day_totals": day_totals,
         "preview_mode": settings.preview_mode,
+        "demo_mode": settings.demo_mode,
         "decision_rows": filtered,
         "filtered_pending": sum((row["pending"] for row in filtered), Decimal("0.00")),
         "categories": categories,
