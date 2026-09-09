@@ -26,7 +26,7 @@ def test_branded_login_and_session_flow(unauth_client: TestClient) -> None:
 
     page = unauth_client.get("/login")
     assert page.status_code == 200
-    assert "Bem-vindo de volta" in page.text
+    assert "Suas contas, com clareza." in page.text
     assert 'name="role"' in page.text
     assert 'value="admin"' in page.text
     assert 'value="client"' in page.text

@@ -49,7 +49,7 @@ def test_client_alias_cannot_write(unauth_client):
 )
 def test_browser_login_names(unauth_client, role, password, label):
     login = unauth_client.get("/login")
-    assert '<option value="admin">Admin</option>' in login.text
+    assert '<option value="admin" selected>Admin</option>' in login.text
     assert '<option value="client">Client</option>' in login.text
     response = unauth_client.post("/login", data={"role": role, "password": password})
     assert response.status_code == 200

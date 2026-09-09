@@ -425,3 +425,18 @@ PT/EN/IT alternatives open to its left by mouse hover, click, touch or keyboard.
 Escape closes the selector/menu and returns focus. Language links preserve the
 selected month and list filters; an unsaved form prompts before navigation.
 Financial records, access permissions and report calculations are unchanged.
+
+## Appearance and sign-in
+
+The menu offers Automatic (default), Light and Dark. Automatic follows the device;
+explicit choices persist only in this browser under `privio-theme`. The theme is
+applied before painting and changes immediately without reloading, submitting
+forms or touching financial records. Storage restrictions fall back gracefully.
+The PDF retains its white print layout independently of the screen theme.
+
+Sign-in uses a two-column layout: a decorative calendar/payment illustration on
+the left and the access form on the right. Small screens hide the illustration
+and prioritize the form. Language and appearance are available before login.
+Password visibility is an explicit button; failed login keeps the selected role
+and language, clears the password, and announces a translated error. Current
+credentials and permissions are unchanged by this presentation release.

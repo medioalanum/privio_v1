@@ -1,0 +1,6 @@
+<fieldset class="appearance-options">
+    <legend>{{ t('appearance') }}</legend>
+    {% for value in ['auto','light','dark'] %}
+    <label><input type="radio" name="appearance" value="{{ value }}" aria-label="{{ t('theme_' ~ value) }}" data-theme-choice{% if value == 'auto' %} checked{% endif %}>{{ t('theme_' ~ value) }}</label>
+    {% endfor %}
+</fieldset>

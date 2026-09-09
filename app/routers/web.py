@@ -76,18 +76,29 @@ def _selected_month(request: Request) -> date:
     return date.today().replace(day=1)
 
 
+def _login_context(
+    request: Request, next_path: str, role: str = "admin", error: bool = False
+) -> dict:
+    lang = normalize_lang(request.query_params.get("lang"))
+    return {
+        "request": request,
+        "error": error,
+        "next_path": next_path,
+        "preview_mode": settings.preview_mode,
+        "user": None,
+        "selected_role": role,
+        "lang": lang,
+        "t": lambda key: t(key, lang=lang),
+    }
+
+
 @router.get("/login", response_class=HTMLResponse)
 def login_page(request: Request, next_path: str = "/") -> Response:
     """Render the branded browser login page."""
     return templates.TemplateResponse(
         request=request,
         name="login.html",
-        context={
-            "request": request,
-            "error": None,
-            "next_path": next_path,
-            "preview_mode": settings.preview_mode,
-        },
+        context=_login_context(request, next_path),
     )
 
 
@@ -115,15 +126,12 @@ def login_action(
         return templates.TemplateResponse(
             request=request,
             name="login.html",
-            context={
-                "request": request,
-                "preview_mode": settings.preview_mode,
-                "error": "Usuário ou senha incorretos.",
-                "next_path": safe_next,
-            },
+            context=_login_context(request, safe_next, role, error=True),
             status_code=status.HTTP_401_UNAUTHORIZED,
         )
 
+    if safe_next == "/":
+        safe_next = "/?lang=" + normalize_lang(request.query_params.get("lang"))
     response = RedirectResponse(url=safe_next, status_code=status.HTTP_303_SEE_OTHER)
     response.set_cookie(
         SESSION_COOKIE,
