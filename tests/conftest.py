@@ -50,6 +50,10 @@ def db_session() -> Generator[Session, None, None]:
     finally:
         db.close()
         Base.metadata.drop_all(bind=test_engine)
+        if test_engine.dialect.name == "postgresql":
+            # DDL recreates enum type OIDs between tests. Discard prepared plans
+            # referencing the previous schema before the next fixture.
+            test_engine.dispose()
 
 
 @pytest.fixture(scope="function")
