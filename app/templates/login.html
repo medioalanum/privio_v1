@@ -40,6 +40,7 @@
   </section>
   <section class="login-panel" aria-labelledby="form-heading"><div class="login-card">
    <h2 id="form-heading">{{ t('login_title') }}</h2><p class="intro">{{ t('login_intro') }}</p>
+   {% if demo_mode %}<p class="notice">{{ t('demo_login') }}</p>{% endif %}
    {% if preview_mode %}<p class="error">{{ t('login_preview') }}</p>{% endif %}
    {% if error %}<p class="error" role="alert">{{ t('login_error') }}</p>{% endif %}
    <form action="/login?lang={{ lang }}" method="post">

@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy.orm import Session
 
 from app.auth import AuthenticatedUser, require_authenticated_web
+from app.config import settings
 from app.database import get_db
 from app.i18n import normalize_lang
 from app.services.monthly_report import monthly_data, render_monthly_pdf
@@ -30,7 +31,9 @@ def monthly_report(
         raise HTTPException(status_code=422, detail="Invalid report month") from None
     exported = datetime.now(UTC)
     data = monthly_data(db, selected, exported.date())
-    pdf = render_monthly_pdf(data, selected, exported, normalize_lang(lang))
+    pdf = render_monthly_pdf(
+        data, selected, exported, normalize_lang(lang), demo=settings.demo_mode
+    )
     filename = f"Privio_{month}_exportado_{exported:%Y-%m-%d}.pdf"
     return Response(
         pdf,

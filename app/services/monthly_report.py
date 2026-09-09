@@ -150,7 +150,9 @@ def monthly_data(db: Session, month: date, today: date) -> dict:
     }
 
 
-def render_monthly_pdf(data: dict, month: date, exported: datetime, lang: str) -> bytes:
+def render_monthly_pdf(
+    data: dict, month: date, exported: datetime, lang: str, *, demo: bool = False
+) -> bytes:
     copy = COPY[lang]
 
     def money(value: Decimal) -> str:
@@ -315,6 +317,8 @@ def render_monthly_pdf(data: dict, month: date, exported: datetime, lang: str) -
         canvas.saveState()
         canvas.setFillColor(muted)
         canvas.setFont("Helvetica", 8)
+        if demo:
+            canvas.drawString(40, 47, t("demo_pdf", lang))
         canvas.drawString(40, 35, copy["footer"])
         canvas.drawString(40, 23, f"Privio | {month_label} | {stamp}")
         canvas.drawRightString(A4[0] - 40, 23, f"{copy['page']} {document.page}")
