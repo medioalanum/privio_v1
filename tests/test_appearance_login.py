@@ -31,7 +31,7 @@ def test_login_preserves_language(unauth_client):
 
     result = unauth_client.post(
         "/login?lang=it",
-        data={"role": "admin", "password": settings.editor_pass, "next_path": "/"},
+        data={"role": "admin", "password": settings.admin_pass, "next_path": "/"},
         follow_redirects=False,
     )
     assert result.status_code == 303 and result.headers["location"] == "/?lang=it"

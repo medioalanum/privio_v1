@@ -22,13 +22,9 @@ services:
         value: admin
       - key: CLIENT_USER
         value: client
-      - key: EDITOR_USER
-        value: editor
-      - key: EDITOR_PASS
-        generateValue: true  # Render generates a secure random password automatically
-      - key: VIEWER_USER
-        value: viewer
-      - key: VIEWER_PASS
-        generateValue: true  # Render generates a secure random password automatically
+      - key: ADMIN_PASS
+        sync: false  # Supply the existing Admin password; never regenerate on migration.
+      - key: CLIENT_PASS
+        sync: false  # Supply the existing Client password.
       - key: SESSION_SECRET
         generateValue: true  # Signs secure browser session cookies

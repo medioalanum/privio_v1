@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.auth import AuthenticatedUser, require_editor, require_viewer
+from app.auth import AuthenticatedUser, require_admin, require_authenticated
 from app.database import get_db
 from app.models.deposit import Deposit
 from app.schemas.deposit import (
@@ -31,9 +31,9 @@ router = APIRouter(tags=["Deposits & Reserve"])
 def create_deposit(
     payload: DepositCreate,
     db: Annotated[Session, Depends(get_db)],
-    _: Annotated[AuthenticatedUser, Depends(require_editor)],
+    _: Annotated[AuthenticatedUser, Depends(require_admin)],
 ) -> Deposit:
-    """Register a new funds transfer / deposit (Editor role required)."""
+    """Register a new funds transfer / deposit (Admin role required)."""
     deposit = Deposit(**payload.model_dump())
     db.add(deposit)
     db.commit()
@@ -48,7 +48,7 @@ def create_deposit(
 )
 def list_deposits(
     db: Annotated[Session, Depends(get_db)],
-    _: Annotated[AuthenticatedUser, Depends(require_viewer)],
+    _: Annotated[AuthenticatedUser, Depends(require_authenticated)],
     start_date: Annotated[
         date | None, Query(description="Filter deposits on or after this date")
     ] = None,
@@ -58,7 +58,7 @@ def list_deposits(
     limit: Annotated[int, Query(ge=1, le=500, description="Max items to return")] = 100,
     offset: Annotated[int, Query(ge=0, description="Number of items to skip")] = 0,
 ) -> Sequence[Deposit]:
-    """Retrieve all deposits with optional date filtering and pagination (Viewer or Editor required)."""
+    """Retrieve all deposits with optional date filtering and pagination (Client or Admin required)."""
     query = select(Deposit)
     if start_date is not None:
         query = query.where(Deposit.date >= start_date)
@@ -85,9 +85,9 @@ def list_deposits(
 )
 def get_reserve_balance(
     db: Annotated[Session, Depends(get_db)],
-    _: Annotated[AuthenticatedUser, Depends(require_viewer)],
+    _: Annotated[AuthenticatedUser, Depends(require_authenticated)],
 ) -> ReserveBalanceResponse:
-    """Calculate the reserve balance: total deposits minus total paid commitments (Viewer or Editor required)."""
+    """Calculate the reserve balance: total deposits minus total paid commitments (Client or Admin required)."""
     return calculate_reserve_balance(db)
 
 
@@ -99,9 +99,9 @@ def get_reserve_balance(
 def get_deposit(
     deposit_id: int,
     db: Annotated[Session, Depends(get_db)],
-    _: Annotated[AuthenticatedUser, Depends(require_viewer)],
+    _: Annotated[AuthenticatedUser, Depends(require_authenticated)],
 ) -> Deposit:
-    """Retrieve a specific deposit record by ID (Viewer or Editor required)."""
+    """Retrieve a specific deposit record by ID (Client or Admin required)."""
     deposit = db.get(Deposit, deposit_id)
     if deposit is None:
         raise HTTPException(
@@ -120,9 +120,9 @@ def update_deposit(
     deposit_id: int,
     payload: DepositCreate,
     db: Annotated[Session, Depends(get_db)],
-    _: Annotated[AuthenticatedUser, Depends(require_editor)],
+    _: Annotated[AuthenticatedUser, Depends(require_admin)],
 ) -> Deposit:
-    """Fully update an existing deposit record (Editor role required)."""
+    """Fully update an existing deposit record (Admin role required)."""
     deposit = db.get(Deposit, deposit_id)
     if deposit is None:
         raise HTTPException(
@@ -147,9 +147,9 @@ def patch_deposit(
     deposit_id: int,
     payload: DepositUpdate,
     db: Annotated[Session, Depends(get_db)],
-    _: Annotated[AuthenticatedUser, Depends(require_editor)],
+    _: Annotated[AuthenticatedUser, Depends(require_admin)],
 ) -> Deposit:
-    """Partially update specific fields of a deposit record (Editor role required)."""
+    """Partially update specific fields of a deposit record (Admin role required)."""
     deposit = db.get(Deposit, deposit_id)
     if deposit is None:
         raise HTTPException(
@@ -174,9 +174,9 @@ def patch_deposit(
 def delete_deposit(
     deposit_id: int,
     db: Annotated[Session, Depends(get_db)],
-    _: Annotated[AuthenticatedUser, Depends(require_editor)],
+    _: Annotated[AuthenticatedUser, Depends(require_admin)],
 ) -> None:
-    """Delete a deposit record by ID (Editor role required)."""
+    """Delete a deposit record by ID (Admin role required)."""
     deposit = db.get(Deposit, deposit_id)
     if deposit is None:
         raise HTTPException(

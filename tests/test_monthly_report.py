@@ -143,7 +143,7 @@ def test_empty_and_multi_page_pdf(db_session, lang):
         assert "Vencimento" in page.extract_text() if lang == "pt" else True
 
 
-@pytest.mark.parametrize("fixture", ["editor_client", "viewer_client"])
+@pytest.mark.parametrize("fixture", ["admin_client", "readonly_client"])
 def test_download_both_roles(request, fixture):
     client = request.getfixturevalue(fixture)
     result = client.get("/reports/monthly.pdf?month=2026-09&lang=pt&q=ignored")
