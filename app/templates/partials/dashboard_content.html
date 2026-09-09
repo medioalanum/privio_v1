@@ -12,6 +12,7 @@
 <a href="/?lang={{ lang }}">{{ t('current_month') }}</a></details>
     <a role="button" class="secondary outline" href="/?lang={{ lang }}&month={{ next_month_key }}" aria-label="{{ t('next_month') }}">›</a>
 </nav>
+<p><a href="/reports/monthly.pdf?month={{ selected_month_key }}&amp;lang={{ lang }}" download>{{ t("download_monthly_pdf") }}</a></p>
 
 {% if user.role.value == 'viewer' %}
 <section aria-labelledby="overview-title"><h1 id="overview-title">{{ t('overview') }}</h1>
