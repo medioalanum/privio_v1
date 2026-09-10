@@ -225,6 +225,7 @@
         });
         let modalOpener = null;
         document.body.addEventListener('htmx:beforeRequest', function (event) {
+            document.getElementById('toast-container').textContent = '';
             if (event.detail.target && event.detail.target.id === 'modal-container') modalOpener = document.activeElement;
         });
         document.body.addEventListener('htmx:afterSwap', function (event) {
