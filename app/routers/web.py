@@ -45,6 +45,7 @@ from app.models.financial_account import AccountTransfer, FinancialAccount
 from app.models.income import ExpectedIncome
 from app.models.payment import Payment
 from app.services.decisions import decision_summary
+from app.services.ledger import ledger_rows
 from app.services.recurrence import resolve_upcoming_occurrences
 from app.services.reserve import (
     calculate_financial_position,
@@ -173,7 +174,7 @@ def _get_dashboard_context(
     query = request.query_params
     rows = (
         decisions["rows"]
-        if query.get("status") == "paid"
+        if query.get("status") in {"paid", "all"}
         else decisions["operational_rows"]
     )
     categories = sorted({row["item"].category for row in rows})
@@ -185,7 +186,11 @@ def _get_dashboard_context(
             or query["q"].casefold()
             in (row["item"].description + " " + row["item"].category).casefold()
         )
-        and (not query.get("status") or row["status"] == query["status"])
+        and (
+            ((query.get("status") or "pending") == "pending" and row["pending"] > 0)
+            or query.get("status") == "all"
+            or row["status"] == query.get("status")
+        )
         and (not query.get("nature") or row["nature"] == query["nature"])
         and (not query.get("category") or row["item"].category == query["category"])
     ]
@@ -193,7 +198,9 @@ def _get_dashboard_context(
         filtered = [
             row
             for row in filtered
-            if str(row["payment"].account_id if row["payment"] else "unassigned")
+            if str(
+                (row["payment"].account_id if row["payment"] else None) or "unassigned"
+            )
             == query["account"]
         ]
     if query.get("responsible"):
@@ -203,13 +210,30 @@ def _get_dashboard_context(
             for row in filtered
             if row["payment"] and row["payment"].account_id in owned
         ]
+    paid_view = query.get("status") == "paid"
+    for row in filtered:
+        row["display_amount"] = (
+            row["payment"].paid_amount if row["payment"] else row["pending"]
+        )
     if query.get("sort") == "amount":
-        filtered.sort(key=lambda row: row["pending"], reverse=True)
+        filtered.sort(key=lambda row: row["display_amount"], reverse=True)
     day_totals = {}
     for row in filtered:
         due = row["item"].occurrence_date
-        day_totals[due] = day_totals.get(due, Decimal("0.00")) + row["pending"]
+        day_totals[due] = day_totals.get(due, Decimal("0.00")) + row["display_amount"]
     return {
+        "view": query.get("view", "month")
+        if query.get("view") in {"accounts", "recurring"}
+        else "month",
+        "paid_view": paid_view,
+        "list_status": (query.get("status") or "pending"),
+        "account_names": {a.id: a.name for a in db.scalars(select(FinancialAccount))},
+        "ledger": ledger_rows(db, selected_month, today, query.get("ledger_account"))
+        if query.get("view") == "accounts"
+        else [],
+        "filtered_amount": sum(
+            (r["display_amount"] for r in filtered), Decimal("0.00")
+        ),
         "day_totals": day_totals,
         "preview_mode": settings.preview_mode,
         "demo_mode": settings.demo_mode,
@@ -1080,7 +1104,16 @@ def create_deposit_form_action(
     db.add(deposit)
     db.commit()
 
-    toast = t("msg_deposit_created", lang=lang_code, amount=f"{amount:,.2f}")
+    destination = db.get(FinancialAccount, account_id) if account_id else None
+    toast = t(
+        "deposit_receipt",
+        lang=lang_code,
+        amount=format_money(amount, lang_code),
+        account=destination.name
+        if destination
+        else t("unassigned_account", lang=lang_code),
+        date=date_val.strftime("%d/%m/%Y"),
+    )
     context = _get_dashboard_context(
         request,
         db,

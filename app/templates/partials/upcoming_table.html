@@ -1,27 +1,31 @@
 <section id="upcoming-section" class="metric-card" style="margin-bottom: 2rem;">
     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 1rem; gap: 0.5rem;">
         <div>
-            <h3 style="margin-bottom: 0;">{{ t('pending_list') }}</h3>
+            <h3 style="margin-bottom: 0;">{{ t('payments_done') if paid_view else t('all_bills') if list_status == 'all' else t('pending_list') }}</h3>
             <small style="color: var(--pico-muted-color);">{{ t('upcoming_subtitle') }}</small>
         </div>
 
     </div>
 
-    <details class="filter-panel" {% if request.query_params.get("q") or request.query_params.get("status") or request.query_params.get("nature") or request.query_params.get("category") or request.query_params.get("account") or request.query_params.get("responsible") %}open{% endif %}><summary>{{ t("filters_more") }}</summary>
+    <nav class="status-tabs" aria-label="{{ t('th_status') }}">
+    {% for code,label in [('pending','to_pay'),('paid','payments_done'),('all','all')] %}
+    <a href="/?lang={{ lang }}&amp;month={{ selected_month_key }}&amp;status={{ code }}#upcoming-section" {% if list_status == code %}aria-current="page"{% endif %}>{{ t(label) }}</a>
+    {% endfor %}</nav>
     <form method="get" action="/" class="filters">
         <input type="hidden" name="lang" value="{{ lang }}"><input type="hidden" name="month" value="{{ selected_month_key }}">
         <label>{{ t('filter_search') }}<input name="q" value="{{ request.query_params.get('q', '') }}" type="search"></label>
-        <label>{{ t('th_status') }}<select name="status">{% for code in ['', 'pending', 'overdue', 'paid'] %}<option value="{{ code }}" {% if request.query_params.get('status', '') == code %}selected{% endif %}>{{ t(code or 'all') }}</option>{% endfor %}</select></label>
+
+        <details class="filter-panel" {% if request.query_params.get('nature') or request.query_params.get('category') or request.query_params.get('account') or request.query_params.get('responsible') or list_status == 'overdue' %}open{% endif %}><summary>{{ t('filters_more') }}</summary><div class="filters">        <label>{{ t('th_status') }}<select name="status">{% for code in ['all', 'pending', 'overdue', 'paid'] %}<option value="{{ code }}" {% if list_status == code %}selected{% endif %}>{{ t(code or 'all') }}</option>{% endfor %}</select></label>
         <label>{{ t('nature') }}<select name="nature">{% for code in ['', 'estimated', 'unclassified', 'confirmed'] %}<option value="{{ code }}" {% if request.query_params.get('nature', '') == code %}selected{% endif %}>{{ t(code or 'all') }}</option>{% endfor %}</select></label>
         <label>{{ t('th_category') }}<select name="category"><option value="">{{ t('all') }}</option>{% for category in categories %}<option {% if request.query_params.get('category') == category %}selected{% endif %}>{{ category }}</option>{% endfor %}</select></label>
         <label>{{ t('th_amount') }} / {{ t('th_due_date') }}<select name="sort"><option value="date">{{ t('th_due_date') }}</option><option value="amount" {% if request.query_params.get('sort') == 'amount' %}selected{% endif %}>{{ t('th_amount') }} ↓</option></select></label>
         <label>{{ t('account_name') }}<select name="account"><option value="">{{ t('all') }}</option><option value="unassigned" {% if request.query_params.get('account') == 'unassigned' %}selected{% endif %}>—</option>{% for account in accounts %}<option value="{{ account.id }}" {% if request.query_params.get('account') == account.id|string %}selected{% endif %}>{{ account.name }}</option>{% endfor %}</select></label>
         <label>{{ t('account_responsible') }}<select name="responsible"><option value="">{{ t('all') }}</option>{% for responsible in responsibles %}<option {% if request.query_params.get('responsible') == responsible %}selected{% endif %}>{{ responsible }}</option>{% endfor %}</select></label>
-        <button type="submit">{{ t('apply') }}</button>
-    </form></details>
-    <p>{{ t('filtered_total') }}: <strong>{{ money(filtered_pending) }}</strong> · {{ t('cash_pending_title') }}: {{ money(decisions.due_total) }}</p>
+        </div></details><button type="submit">{{ t('apply') }}</button>
+    </form>
+    <p>{{ t('paid_amount_short') if paid_view else t('th_amount') if list_status == 'all' else t('filtered_total') }}: <strong>{{ money(filtered_amount) }}</strong></p>
     {% if user.role.value == 'admin' %}<div class="quick-actions"><button hx-get="/ui/commitments/new?lang={{ lang }}&month={{ selected_month_key }}" hx-target="#modal-container">{{ t('new_commitment_btn') }}</button><button class="secondary" hx-get="/ui/deposits/new?lang={{ lang }}&month={{ selected_month_key }}" hx-target="#modal-container">{{ t('new_deposit_btn') }}</button></div>{% endif %}
-    <p><a href="/?lang={{ lang }}&month={{ selected_month_key }}&status=paid#upcoming-section">{{ t("paid_history") }}</a></p>
+
     <div class="overflow-auto">
         <table class="striped">
             <thead>
@@ -31,7 +35,7 @@
                     <th>{{ t('th_description') }}</th>
                     <th>{{ t('th_category') }}</th>
 
-                    <th>{{ t('cash_pending_title') }}</th>
+                    <th>{{ t('paid_amount_short') if paid_view else t('th_amount') if list_status == 'all' else t('cash_pending_title') }}</th>
                     <th>{{ t('th_status') }}</th>
                     {% if user.role.value == 'admin' %}<th>{{ t('th_actions') }}</th>{% endif %}
                 </tr>
@@ -43,7 +47,7 @@
                         {% set item = row.item %}
                         {% set payment = row.payment %}
                         {% if request.query_params.get('sort') != 'amount' and grouping.day != item.occurrence_date %}
-                        <tr class="date-group"><th colspan="{{ 6 if user.role.value == 'admin' else 5 }}" scope="rowgroup">{{ item.occurrence_date.strftime('%d/%m/%Y') }} · {{ t('pending') }}: {{ money(day_totals[item.occurrence_date]) }}</th></tr>
+                        <tr class="date-group"><th colspan="{{ 6 if user.role.value == 'admin' else 5 }}" scope="rowgroup">{{ item.occurrence_date.strftime('%d/%m/%Y') }} · {{ t('paid_amount_short') if paid_view else t('th_amount') }}: {{ money(day_totals[item.occurrence_date]) }}</th></tr>
                         {% set grouping.day = item.occurrence_date %}{% endif %}
                         <tr>
                             <td><strong>{{ item.occurrence_date.strftime('%d/%m/%Y') }}</strong></td>
@@ -51,14 +55,14 @@
                             <td>
                                 {{ item.description }}
                                 {% if row.nature == "estimated" %}<small class="nature-label">{{ t(row.nature) }}</small>{% endif %}
-{% if user.role.value == 'admin' %}<details><summary>{{ t('more_details') }}</summary>
+{% if user.role.value == 'admin' %}<details><summary>{{ t('nature') }}</summary>
 <form hx-post="/ui/reviews?lang={{ lang }}&month={{ selected_month_key }}" hx-target="#dashboard-content" hx-disabled-elt="find button">
 <input type="hidden" name="commitment_id" value="{{ item.original_commitment_id }}"><input type="hidden" name="occurrence_date" value="{{ item.occurrence_date }}">
 <label>{{ t('nature') }}<select name="nature">{% for n in ['unclassified','estimated','confirmed'] %}<option value="{{ n }}" {% if row.nature == n %}selected{% endif %}>{{ t(n) }}</option>{% endfor %}</select></label>
 <label><input type="checkbox" name="date_confirmed" {% if row.date_confirmed %}checked{% endif %}>{{ t('th_due_date') }}: {{ t('confirmed') }}</label><button>{{ t('apply') }}</button></form></details>{% endif %}
                             </td>
-                            <td><small>{{ item.category }}</small></td>
-                            <td><strong>{{ money(row.pending) }}</strong></td>
+                            <td><small>{{ item.category }}</small>{% if payment %}<br><small>{{ account_names.get(payment.account_id, t('unassigned_account')) }}</small>{% endif %}</td>
+                            <td><strong>{{ money(row.display_amount) }}</strong></td>
                             <td>
                                 <span class="badge {% if row.status == 'paid' %}badge-paid{% else %}badge-pending{% endif %}">
                                     {{ t(row.status) }}
@@ -70,16 +74,15 @@
                             {% if user.role.value == 'admin' %}
                                 <td>
                                     <div class="action-btns">
-                                        {% if row.status == 'paid' %}
-                                            <button class="outline secondary" hx-delete="/ui/payments/{{ item.original_commitment_id }}/{{ item.occurrence_date.isoformat() }}?lang={{ lang }}&month={{ selected_month_key }}" hx-target="#dashboard-content" hx-swap="innerHTML" aria-label="{{ t('btn_reopen') }}" title="{{ t('btn_reopen') }}">
-                                                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7M3 4v6h6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                                            </button>
-                                        {% else %}
+                                        {% if row.status != 'paid' %}
                                             <button class="outline primary payment-label" hx-get="/ui/payments/new?commitment_id={{ item.original_commitment_id }}&occurrence_date={{ item.occurrence_date.isoformat() }}&amount={{ item.amount }}&lang={{ lang }}&month={{ selected_month_key }}" hx-target="#modal-container" hx-swap="innerHTML" aria-label="{{ t('btn_mark_paid') }}" title="{{ t('btn_mark_paid') }}">
                                                 {{ t('record_payment') }}
                                             </button>
                                         {% endif %}
-                                        <details class="secondary-actions"><summary>{{ t("more_details") }}</summary><div class="action-btns">
+                                        <details class="secondary-actions"><summary>{{ t("th_actions") }}</summary><div class="action-btns">{% if row.status == 'paid' %}                                            <button class="outline secondary" hx-delete="/ui/payments/{{ item.original_commitment_id }}/{{ item.occurrence_date.isoformat() }}?lang={{ lang }}&month={{ selected_month_key }}" hx-target="#dashboard-content" hx-swap="innerHTML" aria-label="{{ t('btn_reopen') }}" title="{{ t('btn_reopen') }}">
+                                                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7M3 4v6h6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                            </button>
+{% endif %}
                                         <button
                                             class="secondary outline"
                                             hx-get="/ui/commitments/{{ item.original_commitment_id }}/edit?occurrence_date={{ item.occurrence_date.isoformat() }}&lang={{ lang }}&month={{ selected_month_key }}"

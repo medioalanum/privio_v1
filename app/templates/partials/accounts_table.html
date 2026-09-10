@@ -1,9 +1,15 @@
-<section class="metric-card">
-    <div style="display:flex; justify-content:space-between; gap:1rem; align-items:center; flex-wrap:wrap;">
-        <div><h3 title="{{ t('accounts_help') }}">{{ t('accounts_title') }} ⓘ</h3><small>{{ t('accounts_help') }}</small></div>
-        {% if user.role.value == 'admin' %}<div class="action-btns"><button hx-get="/ui/accounts/new?lang={{ lang }}&month={{ selected_month_key }}" hx-target="#modal-container" title="{{ t('btn_new_account_help') }}" aria-label="{{ t('btn_new_account') }}">＋</button><button class="secondary" hx-get="/ui/transfers/new?lang={{ lang }}&month={{ selected_month_key }}" hx-target="#modal-container" title="{{ t('transfer_help') }}" aria-label="{{ t('btn_transfer') }}">⇄</button></div>{% endif %}
-    </div>
-    <div class="overflow-auto"><table class="striped"><thead><tr><th title="{{ t('account_name_help') }}">{{ t('account_name') }} ⓘ</th><th title="{{ t('account_responsible_help') }}">{{ t('account_responsible') }} ⓘ</th><th title="{{ t('account_balance_help') }}">{{ t('account_balance') }} ⓘ</th></tr></thead><tbody>
-        {% for row in decisions.accounts %}{% set account = row.account %}<tr><td><strong>{{ account.name }}</strong><br><small>{{ t('account_type_' + account.account_type) if account.account_type in ['bank','prepaid','third_party','cash','other'] else t('account_type_allocation') }}</small></td><td>{{ account.responsible or '—' }}</td><td><strong>{{ money(row.balance) if account.currency == "EUR" else account.currency ~ " " ~ row.balance }}</strong></td></tr>{% endfor %}
-    </tbody></table></div>
+<section class="metric-card" id="accounts-panel">
+    <h1>{{ t('accounts_title') }}</h1>
+    <p class="metric-sub">{{ t('current_balances') }} · {{ today.strftime('%d/%m/%Y') }} · {{ t('registered_balance') }}</p>
+    {% if user.role.value == 'admin' %}<div class="quick-actions">
+    <button hx-get="/ui/accounts/new?lang={{ lang }}&month={{ selected_month_key }}&view=accounts" hx-target="#modal-container">{{ t('btn_new_account') }}</button>
+    <button class="secondary" hx-get="/ui/transfers/new?lang={{ lang }}&month={{ selected_month_key }}&view=accounts" hx-target="#modal-container">{{ t('btn_transfer') }}</button>
+    </div>{% endif %}
+    <p class="notice">{{ t('allocation_explanation') }}</p>
+    <div class="overflow-auto"><table class="striped responsive-history"><thead><tr><th>{{ t('account_name') }}</th><th>{{ t('account_responsible') }}</th><th>{{ t('account_balance') }}</th></tr></thead><tbody>
+    {% for row in decisions.accounts %}{% set account = row.account %}<tr>
+    <td data-label="{{ t('account_name') }}"><a href="/?view=accounts&amp;lang={{ lang }}&amp;month={{ selected_month_key }}&amp;ledger_account={{ account.id }}#ledger"><strong>{{ account.name }}</strong></a><br><small>{{ t('account_type_' + account.account_type) if account.account_type in ['bank','prepaid','third_party','cash','other'] else t('account_type_allocation') }}</small></td>
+    <td data-label="{{ t('account_responsible') }}">{{ account.responsible or '—' }}</td>
+    <td data-label="{{ t('account_balance') }}"><strong>{{ money(row.balance) if account.currency == "EUR" else account.currency ~ " " ~ row.balance }}</strong></td>
+    </tr>{% endfor %}</tbody></table></div>
 </section>

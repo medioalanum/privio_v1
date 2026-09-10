@@ -138,9 +138,12 @@ def test_payment_details_preserve_due_date_and_reopen(client: TestClient) -> Non
         },
     )
     assert paid.status_code == 200
-    assert "Pago em 24/08/2026" in paid.text
-    assert "Valor pago: € 390,00" in paid.text
-    assert "€ 110,00" in paid.text
+    paid_history = client.get("/?month=2026-08&status=paid")
+    assert "Pago em 24/08/2026" in paid_history.text
+    assert "Valor pago: € 390,00" in paid_history.text
+    assert (
+        "€ 500,00" in paid.text
+    )  # received income, not an asserted unassigned balance
     base = client.get(f"/commitments/{commitment['id']}").json()
     assert base["due_date"] == "2026-08-15"
 
@@ -297,8 +300,8 @@ def test_ui_deposit_form_and_creation_htmx(client: TestClient) -> None:
     create_res = client.post("/ui/deposits", data=deposit_data)
     assert create_res.status_code == 200
     assert (
-        "Entrada externa de € 1,000.00 registrada com sucesso" in create_res.text
-        or "1,000.00" in create_res.text
+        "Entrada de € 1.000,00 registrada em Sem conta definida, em 01/09/2026"
+        in create_res.text
     )
 
 

@@ -24,7 +24,7 @@ if not SQLALCHEMY_DATABASE_URL.startswith("sqlite"):
     assert (make_url(SQLALCHEMY_DATABASE_URL).database or "").startswith(
         "privio_test_"
     ), "Refusing non-test database"
-    test_engine = create_engine(SQLALCHEMY_DATABASE_URL)
+    test_engine = create_engine(SQLALCHEMY_DATABASE_URL, pool_pre_ping=True)
 else:
     test_engine = create_engine(
         SQLALCHEMY_DATABASE_URL,

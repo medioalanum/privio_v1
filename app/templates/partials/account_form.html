@@ -2,7 +2,7 @@
     <article class="modal-content">
         <header><h4 title="{{ t('account_form_help') }}">{{ t('account_form_title') }} ⓘ</h4></header>
         <p class="metric-sub">{{ t('account_form_help') }}</p>
-        <form hx-post="/ui/accounts?lang={{ lang }}&month={{ selected_month_key }}" hx-target="#dashboard-content" hx-swap="innerHTML" hx-on::after-request="if(event.detail.successful) closeModal()">
+        <form hx-disabled-elt="find button[type=submit]" hx-sync="this:drop" hx-post="/ui/accounts?lang={{ lang }}&month={{ selected_month_key }}&view=accounts" hx-target="#dashboard-content" hx-swap="innerHTML" hx-on::after-request="if(event.detail.successful) closeModal()">
             <label title="{{ t('account_name_help') }}">{{ t('account_name') }} ⓘ<input name="name" required maxlength="120" placeholder="{{ t('account_name_placeholder') }}"></label>
             <div class="grid">
                 <label title="{{ t('account_type_help') }}">{{ t('account_type') }} ⓘ

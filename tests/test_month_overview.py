@@ -77,7 +77,8 @@ def test_client_overview_has_no_operations(readonly_client, db_session):
 def test_admin_keeps_operations(admin_client):
     page = admin_client.get("/").text
     assert "/ui/commitments/new" in page
-    assert 'id="accounts-panel"' in page
+    assert "view=accounts" in page
+    assert "/ui/accounts/new" in admin_client.get("/?view=accounts").text
     assert 'id="coverage-title"' not in page
 
 
