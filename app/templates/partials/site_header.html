@@ -5,6 +5,9 @@
 <details class="site-menu" data-disclosure>
             <summary aria-label="{{ t('open_menu') }}"><span aria-hidden="true">☰</span></summary>
             <div class="menu-panel">
+                <a href="/?lang={{ lang }}{% if selected_month_key %}&amp;month={{ selected_month_key }}{% endif %}">{{ t('month_overview') }}</a>
+                <a href="/?view=accounts&amp;lang={{ lang }}{% if selected_month_key %}&amp;month={{ selected_month_key }}{% endif %}">{{ t('accounts_title') }}</a>
+                {% if user.role.value == 'admin' %}<a href="/?view=recurring&amp;lang={{ lang }}{% if selected_month_key %}&amp;month={{ selected_month_key }}{% endif %}">{{ t('recurring_management') }}</a>{% endif %}
                 {% include "partials/appearance.html" %}
                 {% if user and user.role.value == 'admin' %}<a href="/docs" target="_blank" rel="noopener">{{ t('swagger_api') }}</a>{% endif %}
                 {% if user %}<form action="/logout" method="post"><button type="submit" class="secondary outline">{{ t('logout') }}</button></form>{% endif %}

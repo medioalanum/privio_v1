@@ -4,14 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}{{ t('app_title') }}{% endblock %}</title>
-    
+
     {% include 'partials/theme_bootstrap.html' %}
     <!-- Pico.css CDN (v2) -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
-    
+
     <!-- HTMX CDN -->
     <script src="https://unpkg.com/htmx.org@2.0.2"></script>
-    
+
     <style>
         :root {
             --pico-font-size: 95%;
@@ -173,6 +173,30 @@
         .month-picker > summary {font-size:1.15rem;font-weight:650;}
         .month-picker[open] .month-form {margin:.6rem 0;}
         @media(max-width:600px) {.month-navigation {display:flex;justify-content:space-between;align-items:start;gap:.4rem;} .month-picker {flex:1;min-width:0;} .month-form {display:block;} .month-form button {width:100%;} header nav {padding-block:.25rem;} .month-navigation {margin-bottom:1rem;} }
+
+        .status-tabs {display:flex;gap:.5rem;justify-content:flex-start;flex-wrap:wrap;margin:1rem 0;}
+        .status-tabs a,.account-chips a {padding:.6rem .85rem;border:1px solid var(--pico-muted-border-color);border-radius:.5rem;text-decoration:none;min-height:44px;}
+        .status-tabs a[aria-current] {background:var(--pico-primary-background);color:var(--pico-primary-inverse);font-weight:700;}
+        .balance-strip {padding:1rem;border:1px solid var(--pico-muted-border-color);border-radius:.6rem;margin-bottom:1.5rem;}
+        .account-chips {display:flex;gap:.6rem;flex-wrap:wrap;margin-top:.75rem;align-items:center;}
+        .account-chips a {display:flex;gap:1rem;align-items:center;}
+        .month-heading {font-size:1.25rem;}
+        .section-disclosure {border:1px solid var(--pico-muted-border-color);border-radius:.5rem;padding:0;margin:1rem 0;}
+        .section-disclosure > summary {padding:1rem;font-weight:650;background:var(--pico-card-background-color);min-height:48px;}
+        .section-disclosure > summary::after {opacity:1;width:1.25rem;height:1.25rem;}
+        .section-disclosure > :not(summary) {margin:1rem;}
+        .page-tools {display:flex;gap:.75rem;flex-wrap:wrap;}
+        #ledger td {vertical-align:top;}
+        @media(max-width:600px) {.account-chips {display:grid;}.account-chips a {justify-content:space-between;} #upcoming-section td {padding:.4rem .6rem;} #upcoming-section .date-group {background:var(--pico-card-background-color);}}
+
+        @media(max-width:600px) {
+            .responsive-history,.responsive-history tbody,.responsive-history tr,.responsive-history td {display:block;width:100%;}
+            .responsive-history thead {display:none;}
+            .responsive-history tr {padding:.75rem 0;border-bottom:1px solid var(--pico-muted-border-color);}
+            .responsive-history td {border:0;padding:.3rem .5rem;overflow-wrap:anywhere;}
+            .responsive-history td::before {content:attr(data-label);display:block;font-size:.75rem;color:var(--pico-muted-color);}
+            #accounts-panel h1 {font-size:1.5rem;}
+        }
     </style>
 {% include "partials/navigation_style.html" %}
 {% include 'partials/theme_style.html' %}
@@ -201,6 +225,7 @@
         });
         let modalOpener = null;
         document.body.addEventListener('htmx:beforeRequest', function (event) {
+            document.getElementById('toast-container').textContent = '';
             if (event.detail.target && event.detail.target.id === 'modal-container') modalOpener = document.activeElement;
         });
         document.body.addEventListener('htmx:afterSwap', function (event) {

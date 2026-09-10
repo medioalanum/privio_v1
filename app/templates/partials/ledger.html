@@ -1,0 +1,10 @@
+<section id="ledger" class="metric-card">
+<h2>{{ t('movement_history') }} · {{ selected_month_label }}</h2>
+<p>{{ t('movement_dates_help') }}</p>
+<form action="/" method="get" class="filters">
+<input type="hidden" name="view" value="accounts"><input type="hidden" name="lang" value="{{ lang }}"><input type="hidden" name="month" value="{{ selected_month_key }}">
+<label>{{ t('account_name') }}<select name="ledger_account"><option value="">{{ t('all') }}</option><option value="unassigned" {% if request.query_params.get('ledger_account') == 'unassigned' %}selected{% endif %}>{{ t('unassigned_account') }}</option>{% for aid,name in account_names.items() %}<option value="{{ aid }}" {% if request.query_params.get('ledger_account') == aid|string %}selected{% endif %}>{{ name }}</option>{% endfor %}</select></label><button>{{ t('apply') }}</button></form>
+<div class="overflow-auto"><table class="responsive-history"><thead><tr><th>{{ t('movement_date') }}</th><th>{{ t('th_description') }}</th><th>{{ t('account_name') }}</th><th>{{ t('th_amount') }}</th><th>{{ t('ledger_balance') }}</th></tr></thead><tbody>
+{% for row in ledger %}<tr id="{{ row.id }}"><td data-label="{{ t('movement_date') }}">{{ row.date.strftime('%d/%m/%Y') }}</td><td data-label="{{ t('th_description') }}">{{ row.description }}<br><small>{{ t(row.kind) }}</small></td><td data-label="{{ t('account_name') }}">{{ row.account.name if row.account else t('unassigned_account') }}</td><td data-label="{{ t('th_amount') }}">{{ money(row.amount) if not row.account or row.account.currency == 'EUR' else row.account.currency ~ ' ' ~ row.amount }}</td><td data-label="{{ t('ledger_balance') }}">{{ money(row.balance) if not row.account or row.account.currency == 'EUR' else row.account.currency ~ ' ' ~ row.balance }}</td></tr>{% else %}<tr><td colspan="5">{{ t('no_rows') }}</td></tr>{% endfor %}
+</tbody></table></div><small>{{ t('ledger_balance_help') }}</small>
+</section>

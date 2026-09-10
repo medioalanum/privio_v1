@@ -936,3 +936,119 @@ TRANSLATIONS["it"].update(
         "forecast_note": "Proiezione con entrate registrate; gli importi futuri possono cambiare.",
     }
 )
+
+# Financial navigation and explicit time/account scope.
+for _lang, _labels in {
+    "pt": {
+        "month_overview": "Visão do mês",
+        "recurring_management": "Compromissos recorrentes",
+        "payments_done": "Pagos",
+        "to_pay": "A pagar",
+        "all_bills": "Todos os compromissos",
+        "current_balances": "Saldos atuais",
+        "registered_balance": "Conforme lançamentos registrados",
+        "accounts_and_history": "Contas e extrato",
+        "unassigned_account": "Sem conta definida",
+        "movement_history": "Histórico de movimentações",
+        "movement_income": "Entrada recebida",
+        "movement_payment": "Pagamento",
+        "movement_transfer": "Transferência interna",
+        "movement_dates_help": "Entradas e saídas pela data da movimentação, que pode ser diferente do mês de vencimento.",
+        "ledger_balance": "Saldo após lançamento",
+        "ledger_balance_help": "Saldo calculado a partir do saldo inicial cadastrado. Lançamentos do mesmo dia são ordenados por tipo e identificador, sem afirmar a ordem bancária. Valores sem conta definida não têm saldo calculado.",
+        "allocation_explanation": "Recursos a distribuir contém movimentações ainda sem conciliação de conta. Não representa saldo bancário confirmado. Confira os vínculos e saldos iniciais antes de usar um total consolidado.",
+        "select_destination": "Selecione a conta de destino",
+        "entry_explanation": "Registre apenas dinheiro novo recebido. Saldo restante não é nova entrada. Para mover dinheiro entre suas contas, use Transferir em Contas e extrato.",
+        "money_now": "Disponível consolidado hoje",
+        "admin_unknown": "Total disponível e cobertura aguardam conciliação. Consulte os saldos por conta e revise as movimentações sem conta definida.",
+        "commitments_title": "Compromissos recorrentes",
+    },
+    "en": {
+        "month_overview": "Month overview",
+        "recurring_management": "Recurring commitments",
+        "payments_done": "Paid",
+        "to_pay": "To pay",
+        "all_bills": "All commitments",
+        "current_balances": "Current balances",
+        "registered_balance": "Based on recorded transactions",
+        "accounts_and_history": "Accounts and statement",
+        "unassigned_account": "Unassigned account",
+        "movement_history": "Transaction history",
+        "movement_income": "Received income",
+        "movement_payment": "Payment",
+        "movement_transfer": "Internal transfer",
+        "movement_dates_help": "Income and payments by transaction date, which may differ from the due-date month.",
+        "ledger_balance": "Balance after entry",
+        "ledger_balance_help": "Calculated from the registered opening balance. Same-day entries are ordered by type and ID, not asserted bank order. Unassigned entries have no calculated account balance.",
+        "allocation_explanation": "Resources to allocate contains transactions awaiting account reconciliation. It is not a confirmed bank balance. Review assignments and opening balances before relying on a consolidated total.",
+        "select_destination": "Select the destination account",
+        "entry_explanation": "Record only new income. A remaining balance is not new income. To move money between your accounts, use Transfer in Accounts and statement.",
+        "money_now": "Consolidated available funds today",
+        "admin_unknown": "Available funds and coverage await reconciliation. Check individual account balances and review unassigned transactions.",
+        "commitments_title": "Recurring commitments",
+    },
+    "it": {
+        "month_overview": "Riepilogo del mese",
+        "recurring_management": "Impegni ricorrenti",
+        "payments_done": "Pagati",
+        "to_pay": "Da pagare",
+        "all_bills": "Tutti gli impegni",
+        "current_balances": "Saldi attuali",
+        "registered_balance": "In base ai movimenti registrati",
+        "accounts_and_history": "Conti ed estratto",
+        "unassigned_account": "Conto non assegnato",
+        "movement_history": "Storico movimenti",
+        "movement_income": "Entrata ricevuta",
+        "movement_payment": "Pagamento",
+        "movement_transfer": "Trasferimento interno",
+        "movement_dates_help": "Entrate e uscite per data del movimento, che può differire dal mese di scadenza.",
+        "ledger_balance": "Saldo dopo il movimento",
+        "ledger_balance_help": "Calcolato dal saldo iniziale registrato. I movimenti dello stesso giorno sono ordinati per tipo e ID, non secondo un ordine bancario verificato. Nessun saldo calcolato per movimenti senza conto.",
+        "allocation_explanation": "Risorse da distribuire contiene movimenti in attesa di riconciliazione. Non è un saldo bancario confermato. Verifica conti e saldi iniziali prima di usare il totale consolidato.",
+        "select_destination": "Seleziona il conto di destinazione",
+        "entry_explanation": "Registra solo nuove entrate. Il saldo rimanente non è una nuova entrata. Per spostare denaro tra conti, usa Trasferisci in Conti ed estratto.",
+        "money_now": "Disponibilità consolidata di oggi",
+        "admin_unknown": "Disponibilità e copertura in attesa di riconciliazione. Consulta i saldi dei conti e verifica i movimenti senza conto.",
+        "commitments_title": "Impegni ricorrenti",
+    },
+}.items():
+    TRANSLATIONS[_lang].update(_labels)
+TRANSLATIONS["pt"].update({"months_short": "meses", "filters_more": "Mais filtros"})
+TRANSLATIONS["en"].update({"months_short": "months", "filters_more": "More filters"})
+TRANSLATIONS["it"].update({"months_short": "mesi", "filters_more": "Altri filtri"})
+TRANSLATIONS["pt"].update(
+    {
+        "received_month": "Recebido no mês",
+        "paid_in_month": "Pago no mês",
+        "by_movement_date": "Pela data da movimentação",
+        "movement_date": "Data do movimento",
+    }
+)
+TRANSLATIONS["en"].update(
+    {
+        "received_month": "Received this month",
+        "paid_in_month": "Paid this month",
+        "by_movement_date": "By transaction date",
+        "movement_date": "Transaction date",
+    }
+)
+TRANSLATIONS["it"].update(
+    {
+        "received_month": "Ricevuto nel mese",
+        "paid_in_month": "Pagato nel mese",
+        "by_movement_date": "Per data del movimento",
+        "movement_date": "Data del movimento",
+    }
+)
+TRANSLATIONS["pt"]["deposit_receipt"] = (
+    "Entrada de {amount} registrada em {account}, em {date}. Consulte Contas e extrato nesse mês."
+)
+TRANSLATIONS["en"]["deposit_receipt"] = (
+    "Income of {amount} recorded in {account} on {date}. Open Accounts and statement for that month."
+)
+TRANSLATIONS["it"]["deposit_receipt"] = (
+    "Entrata di {amount} registrata in {account} il {date}. Consulta Conti ed estratto per quel mese."
+)
+TRANSLATIONS["pt"]["paid_amount_short"] = "Valor pago"
+TRANSLATIONS["en"]["paid_amount_short"] = "Amount paid"
+TRANSLATIONS["it"]["paid_amount_short"] = "Importo pagato"

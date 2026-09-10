@@ -8,6 +8,7 @@
         <form 
             hx-post="/ui/deposits?lang={{ lang }}&month={{ selected_month_key }}"
             hx-target="#dashboard-content"
+            hx-disabled-elt="find button[type=submit]" hx-sync="this:drop"
             hx-swap="innerHTML"
             hx-on::after-request="if(event.detail.successful) closeModal()"
             style="margin-top: 1rem;">
@@ -39,9 +40,10 @@
             </div>
 
             <label title="{{ t('external_entry_account_help') }}">{{ t('destination_account') }} ⓘ
-                <select name="account_id" required>{% for account in accounts %}<option value="{{ account.id }}">{{ account.name }}</option>{% endfor %}</select>
+                <select name="account_id" required><option value="" disabled selected>{{ t("select_destination") }}</option>{% for account in accounts %}<option value="{{ account.id }}">{{ account.name }}</option>{% endfor %}</select>
             </label>
 
+            <p class="metric-sub">{{ t("entry_explanation") }}</p>
             <label for="deposit-note">
                 {{ t('field_deposit_note') }}
                 <input 

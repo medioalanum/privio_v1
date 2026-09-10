@@ -76,3 +76,26 @@ rollback revision preserves explicit migrations and does not synthesize historic
 payments or overwrite existing financial records during startup.
 Verify health, logs, published SHA, selected months and annual forecast read-only.
 Monitor at least five minutes after release; report actual observed duration.
+
+## Financial clarity interface
+
+Account balances remain current through today, independently of the selected
+month. The account statement filters by movement date; bills use due-date month.
+Statement running balances use the stored opening balance and all earlier posted
+movements. Same-day ordering is deterministic, not a claim about bank ordering.
+Unassigned entries are never attributed to a bank in the statement. Any posted
+unassigned/allocation movement or nonzero allocation balance suppresses the
+consolidated available balance and its derived coverage/projections. Individual
+account balances are still visible and explicitly labeled as recorded balances.
+
+The monthly page has persistent To pay / Paid / All links. Paid rows show actual
+paid amounts, including discounts, and preserve due date and actual payment date.
+Accounts/statement and recurring management are separate read views accessible
+from navigation; the month and language remain in the URL. Received-income
+confirmation identifies the amount, account and date. Forms disable their submit
+button while a request is in flight; this is a UI duplicate-click guard, not a
+replacement for server-side idempotency.
+
+This release adds no schema changes or data migrations. Validate record hashes
+before and after release. Test fixture creation and destructive test cleanup must
+run only in the dedicated test database, never the restored production copy.

@@ -1,9 +1,19 @@
+<section class="balance-strip" aria-label="{{ t('current_balances') }}">
+<div><strong>{{ t('current_balances') }}</strong><small> · {{ today.strftime('%d/%m/%Y') }} · {{ t('registered_balance') }}</small></div>
+<div class="account-chips">{% for row in decisions.accounts if row.account.account_type != 'allocation' %}<a href="/?view=accounts&amp;lang={{ lang }}&amp;month={{ selected_month_key }}&amp;ledger_account={{ row.account.id }}#ledger"><span>{{ row.account.name }}</span> <strong>{{ money(row.balance) if row.account.currency == 'EUR' else row.account.currency ~ ' ' ~ row.balance }}</strong></a>{% endfor %}
+<a href="/?view=accounts&amp;lang={{ lang }}&amp;month={{ selected_month_key }}">{{ t('accounts_and_history') }} →</a></div></section>
+<h2 class="month-heading">{{ selected_month_label }}</h2>
 <div class="grid-cards month-cards" id="stats-cards">
 <article class="metric-card"><small>{{ t('pay_until') }} {{ decisions.month_end.strftime('%d/%m/%Y') }}</small><div class="metric-value">{{ money(decisions.due_total) }}</div><small>{{ t('includes_arrears') if decisions.month_current else selected_month_label }}</small></article>
+{% if decisions.past %}
+<article class="metric-card"><small>{{ t('received_month') }}</small><div class="metric-value">{{ money(decisions.received) }}</div><small>{{ t('by_movement_date') }}</small></article>
+<article class="metric-card"><small>{{ t('paid_in_month') }}</small><div class="metric-value">{{ money(decisions.realized_paid) }}</div><small>{{ t('by_movement_date') }}</small></article>
+{% else %}
 <article class="metric-card"><small>{{ t('money_now') }}</small><div class="metric-value">{{ money(decisions.current) }}</div><small>{{ today.strftime('%d/%m/%Y') }}</small></article>
 <article class="metric-card"><small>{{ t('surplus') if decisions.difference is not none and decisions.difference >= 0 else t('gap') }}</small><div class="metric-value {% if decisions.difference is not none %}{{ 'positive' if decisions.difference >= 0 else 'negative' }}{% endif %}">{{ money(decisions.difference|abs) if decisions.difference is not none else '—' }}</div><small>{{ t('with_cash') if decisions.month_current else t('past_projection') if decisions.past else t('forecast_note') }}</small></article>
+{% endif %}
 </div>
-{% if decisions.current is none %}<p class="notice">{{ t('admin_unknown') if user.role.value == 'admin' else t('client_unknown') }} {% if user.role.value == 'admin' %}<a href="#accounts-panel" onclick="document.getElementById('accounts-panel').open=true">{{ t('review_balance') }}</a>{% endif %}</p>{% endif %}
+{% if decisions.current is none %}<p class="notice">{{ t('admin_unknown') if user.role.value == 'admin' else t('client_unknown') }} {% if user.role.value == 'admin' %}<a href="/?view=accounts&amp;lang={{ lang }}&amp;month={{ selected_month_key }}">{{ t('review_balance') }}</a>{% endif %}</p>{% endif %}
 <div class="month-alerts">
 {% if decisions.month_current and decisions.overdue %}<p><strong class="negative">{{ t('overdue_title') }}: {{ money(decisions.overdue) }}</strong> · {{ t('includes_arrears') }}</p>{% endif %}
 {% if decisions.next_day and decisions.month_current %}<p>{{ t('next_due') }}: <strong>{{ decisions.next_day.strftime('%d/%m/%Y') }}</strong> · {{ decisions.next_count }} {{ t('payments_count') }} · <strong>{{ money(decisions.next_amount) }}</strong></p>{% endif %}

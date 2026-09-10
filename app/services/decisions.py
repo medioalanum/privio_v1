@@ -121,6 +121,14 @@ def decision_summary(
             if getattr(entry, date_field) > today:
                 continue
             account = entry.account_id or default
+            if entry.account_id is None:
+                incomplete = True
+            if (
+                account in balances
+                and next(a for a in accounts if a.id == account).account_type
+                == "allocation"
+            ):
+                incomplete = True
             if account not in balances:
                 incomplete = True
             else:
@@ -136,6 +144,9 @@ def decision_summary(
     # Commitments have no currency field: only the established EUR scope is safe.
     currencies = {a.currency for a in accounts}
     incomplete |= currencies != {"EUR"}
+    incomplete |= any(
+        a.account_type == "allocation" and balances[a.id] != ZERO for a in accounts
+    )
     current = None if incomplete else sum(balances.values(), ZERO)
     daily = defaultdict(lambda: {"inflow": ZERO, "outflow": ZERO})
     if end >= today:
